@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manager Profiel</title>
+</head>
+<body>
+  <h2>Welkom, <span id="manager-name"></span></h2>
+  <p>E-mailadres: <span id="email"></span></p>
+  <p>Land: <span id="country"></span></p>
+  <p><a href="index.html">Terug naar homepage</a></p>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) {
+      window.location.href = 'login.html';
+    } else {
+      document.getElementById('manager-name').textContent = user.manager_name;
+      document.getElementById('email').textContent = user.email;
+      document.getElementById('country').textContent = user.country ?? 'Nog niet toegewezen';
+    }
+  </script>
+</body>
+</html>
