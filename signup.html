@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inschrijven</title>
+</head>
+<body>
+  <h2>Inschrijven</h2>
+  <form id="signup-form">
+    <input type="text" placeholder="Managernaam" id="manager_name" required><br>
+    <input type="email" placeholder="E-mailadres" id="email" required><br>
+    <input type="password" placeholder="Wachtwoord" id="password" required><br>
+    <button type="submit">Account aanmaken</button>
+  </form>
+  <p id="message"></p>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
+
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const manager_name = document.getElementById('manager_name').value;
+
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{ email, password, manager_name }]);
+
+      document.getElementById('message').textContent = error ? error.message : 'Account aangemaakt! Je kunt nu inloggen.';
+    });
+  </script>
+</body>
+</html>
