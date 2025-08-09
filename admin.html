@@ -36,18 +36,10 @@
     <section id="tab-admins" class="bg-white rounded-2xl shadow p-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">Admin allowlist</h2>
-      <form id="editionForm" class="ml-auto grid grid-cols-1 md:grid-cols-5 gap-2">
-  <select id="edSeason" class="border rounded-lg px-3 py-2 text-sm" required>
-    <option value="zomer">Zomer</option>
-    <option value="winter">Winter</option>
-  </select>
-  <input id="edCity" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gaststad" />
-  <input id="edCountry" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gastland" />
-  <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Start (optioneel)" />
-  <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Eind (optioneel)" />
-  <button class="md:col-span-5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-</form>
-
+        <form id="allowForm" class="flex flex-wrap gap-2">
+          <input id="allowEmail" type="email" class="border rounded-lg px-3 py-2 text-sm" placeholder="e-mail toevoegen..." required />
+          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
+        </form>
       </div>
       <table class="w-full text-sm border rounded-lg overflow-hidden">
         <thead class="bg-slate-100"><tr><th class="p-2 text-left">E-mail</th><th class="p-2 text-right">Acties</th></tr></thead>
@@ -114,17 +106,30 @@
 
     <!-- Edities -->
     <section id="tab-editions" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="mb-4 flex flex-wrap items-center gap-2">
-        <h2 class="text-lg font-semibold">Edities</h2>
-        <form id="editionForm" class="ml-auto flex gap-2">
-          <input id="edName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Naam" required />
-          <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" required />
-          <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" required />
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold mb-3">Edities</h2>
+        <form id="editionForm" class="ml-auto grid grid-cols-1 md:grid-cols-5 gap-2">
+          <select id="edSeason" class="border rounded-lg px-3 py-2 text-sm" required>
+            <option value="zomer">Zomer</option>
+            <option value="winter">Winter</option>
+          </select>
+          <input id="edCity" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gaststad" />
+          <input id="edCountry" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gastland" />
+          <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Start (optioneel)" />
+          <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Eind (optioneel)" />
+          <button class="md:col-span-5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
         </form>
       </div>
       <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr><th class="p-2 text-left">Naam</th><th class="p-2 text-left">Start</th><th class="p-2 text-left">Eind</th><th class="p-2">Acties</th></tr></thead>
+        <thead class="bg-slate-100"><tr>
+          <th class="p-2 text-left">Naam</th>
+          <th class="p-2 text-left">Seizoen</th>
+          <th class="p-2 text-left">Gaststad</th>
+          <th class="p-2 text-left">Gastland</th>
+          <th class="p-2 text-left">Start</th>
+          <th class="p-2 text-left">Eind</th>
+          <th class="p-2">Acties</th>
+        </tr></thead>
         <tbody id="editionsBody"></tbody>
       </table>
     </section>
@@ -144,7 +149,7 @@
           <h3 class="font-semibold mb-2">Onderdelen (disciplines)</h3>
           <form id="discForm" class="flex flex-wrap gap-2 mb-3">
             <select id="discSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-            <input id="discName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Disciplinenaam" required />
+            <input id="discName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Disciplinenaam (optioneel)" />
             <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
           </form>
           <ul id="discList" class="text-sm space-y-1"></ul>
@@ -154,34 +159,39 @@
       <hr class="my-6">
 
       <div>
-        <h3 class="font-semibold mb-2">Event koppelen aan editie</h3>
-    <form id="eventForm" class="flex flex-wrap gap-2 items-end">
-  <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
+        <h3 class="font-semibold mb-2">Event (Onderdeel) koppelen aan editie</h3>
+        <form id="eventForm" class="flex flex-wrap gap-2 items-end">
+          <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
 
-  <!-- Sport (verplicht) en Discipline (optioneel) -->
-  <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-  <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
-    <option value="">(geen discipline)</option>
-  </select>
+          <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
+          <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
+            <option value="">(geen discipline)</option>
+          </select>
 
-  <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m, Allround)" />
+          <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m)" />
+          <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
+            <option value="M">Mannen</option>
+            <option value="V">Vrouwen</option>
+            <option value="X">Gemengd</option>
+          </select>
+          <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
+          <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
 
-  <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
-    <option value="M">Mannen</option>
-    <option value="V">Vrouwen</option>
-    <option value="X">Gemengd</option>
-  </select>
+          <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
+          <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
+          <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
+          <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
 
-  <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
-  <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
+          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
+        </form>
 
-  <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
-  <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
-  <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
-  <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
-
-  <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-</form>
+        <div class="mt-4">
+          <h4 class="font-semibold mb-2">Events (per editie)</h4>
+          <select id="evListEdition" class="border rounded-lg px-3 py-2 text-sm mb-3"></select>
+          <ul id="eventsList" class="text-sm space-y-1"></ul>
+        </div>
+      </div>
+    </section>
 
     <!-- Schema -->
     <section id="tab-schedule" class="bg-white rounded-2xl shadow p-6 hidden">
@@ -358,7 +368,6 @@
       const name = document.getElementById('countryName').value.trim(); if (!name) return;
       await supabase.from('countries').insert([{ name }]); document.getElementById('countryName').value=''; loadCountries();
     });
-
     async function getFreeCountries() {
       const { data } = await supabase.from('countries').select('*').eq('is_taken', false).order('id');
       return data ?? [];
@@ -389,7 +398,6 @@
             <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
             <button class="px-2 py-1 text-xs border rounded mp10">+10 MP</button>
             <button class="px-2 py-1 text-xs border rounded mp100">Reset 100</button>
-            <button class="px-2 py-1 text-xs border rounded init">Init (her)</button>
             <button class="px-2 py-1 text-xs border rounded danger del" ${p.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}>Verwijder</button>
           </td>`;
         (async () => {
@@ -419,17 +427,6 @@
         tr.querySelector('.mp100').addEventListener('click', async () => {
           await supabase.from('profiles').update({ mp: 100 }).eq('user_id', p.user_id);
           await loadProfiles();
-        });
-        tr.querySelector('.init').addEventListener('click', async () => {
-          const chosen = tr.querySelector('.freeCountrySel').value || null;
-          const { error } = await supabase.rpc('admin_init_manager', {
-            p_user_id: p.user_id,
-            p_manager_name: p.manager_name || 'Manager',
-            p_country_name: chosen,
-            p_mp: p.mp ?? 100
-          });
-          if (error) alert(error.message);
-          await loadCountries(); await loadProfiles();
         });
         tr.querySelector('.del').addEventListener('click', async () => {
           if (p.email.toLowerCase()===meDb.email.toLowerCase()) { alert('Jezelf kun je niet verwijderen.'); return; }
@@ -501,49 +498,58 @@
         sel.innerHTML = '';
         data?.forEach(ed => {
           const o = document.createElement('option');
-          o.value = ed.id; o.textContent = `${ed.name} (${ed.start_date} - ${ed.end_date})`;
+          o.value = ed.id;
+          o.textContent = `${ed.name} (${ed.start_date ?? '-'} - ${ed.end_date ?? '-'})`;
           sel.appendChild(o);
         });
       });
       return data ?? [];
     }
     async function loadEditionsTable() {
-      const eds = await loadEditionsInto([document.getElementById('evEdition'), document.getElementById('evListEdition'), document.getElementById('schEdition'), document.getElementById('mpEdition'), document.getElementById('simEdition')]);
+      const eds = await loadEditionsInto([
+        document.getElementById('evEdition'),
+        document.getElementById('evListEdition'),
+        document.getElementById('schEdition'),
+        document.getElementById('mpEdition'),
+        document.getElementById('simEdition')
+      ]);
       const tbody = document.getElementById('editionsBody'); tbody.innerHTML='';
       (eds ?? []).forEach(ed => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-2">${ed.name}</td><td class="p-2">${ed.start_date}</td><td class="p-2">${ed.end_date}</td>
-          <td class="p-2 text-right"><button class="px-2 py-1 text-xs border rounded del">Verwijder</button></td>`;
+        tr.innerHTML = `<td class="p-2">${ed.name}</td>
+                        <td class="p-2">${ed.season ?? '-'}</td>
+                        <td class="p-2">${ed.host_city ?? '-'}</td>
+                        <td class="p-2">${ed.host_country ?? '-'}</td>
+                        <td class="p-2">${ed.start_date ?? '-'}</td>
+                        <td class="p-2">${ed.end_date ?? '-'}</td>
+                        <td class="p-2 text-right"><button class="px-2 py-1 text-xs border rounded del">Verwijder</button></td>`;
         tr.querySelector('.del').addEventListener('click', async () => {
           await supabase.from('editions').delete().eq('id', ed.id); loadEditionsTable();
         });
         tbody.appendChild(tr);
       });
     }
-   document.getElementById('editionForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const season = document.getElementById('edSeason').value;         // 'zomer' | 'winter'
-  const host_city = document.getElementById('edCity').value.trim();
-  const host_country = document.getElementById('edCountry').value.trim();
-  const start_date = document.getElementById('edStart').value || null;
-  const end_date = document.getElementById('edEnd').value || null;
+    document.getElementById('editionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const season = document.getElementById('edSeason').value; // 'zomer' | 'winter'
+      const host_city = document.getElementById('edCity').value.trim();
+      const host_country = document.getElementById('edCountry').value.trim();
+      const start_date = document.getElementById('edStart').value || null;
+      const end_date = document.getElementById('edEnd').value || null;
 
-  // Maak editie met autonaam via RPC
-  const { data: newId, error } = await supabase.rpc('admin_create_edition', {
-    p_season: season, p_host_city: host_city, p_host_country: host_country
-  });
-  if (error) { alert(error.message); return; }
+      const { data: newId, error } = await supabase.rpc('admin_create_edition', {
+        p_season: season, p_host_city: host_city, p_host_country: host_country
+      });
+      if (error) { alert(error.message); return; }
 
-  // optioneel de datums invullen (kunnen later ook)
-  if (start_date || end_date) {
-    await supabase.from('editions').update({ start_date, end_date }).eq('id', newId);
-  }
+      if (start_date || end_date) {
+        await supabase.from('editions').update({ start_date, end_date }).eq('id', newId);
+      }
 
-  // formulier leeg en verversen
-  ['edCity','edCountry','edStart','edEnd'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('edSeason').value='zomer';
-  await loadEditionsTable();
-});
+      ['edCity','edCountry','edStart','edEnd'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('edSeason').value='zomer';
+      await loadEditionsTable();
+    });
 
     /* ===== Sporten & Onderdelen ===== */
     async function loadSports() {
@@ -553,8 +559,7 @@
       const discSport = document.getElementById('discSport'); discSport.innerHTML='';
       (data ?? []).forEach(s => {
         const li = document.createElement('li');
-        li.textContent = s.name;
-        ul.appendChild(li);
+        li.textContent = s.name; ul.appendChild(li);
         const o1 = document.createElement('option'); o1.value = s.id; o1.textContent = s.name; evSport.appendChild(o1);
         const o2 = document.createElement('option'); o2.value = s.id; o2.textContent = s.name; discSport.appendChild(o2);
       });
@@ -563,54 +568,63 @@
     async function loadDisciplines() {
       const { data } = await supabase.from('disciplines').select('id, name, sport_id, sports(name)').order('name');
       const ul = document.getElementById('discList'); ul.innerHTML='';
-      const evDisc = document.getElementById('evDisc'); evDisc.innerHTML='';
+      const evDisc = document.getElementById('evDisc'); evDisc.innerHTML='<option value="">(geen discipline)</option>';
       (data ?? []).forEach(d => {
         const li = document.createElement('li');
-        li.textContent = `${d.sports?.name} — ${d.name}`;
-        ul.appendChild(li);
+        li.textContent = `${d.sports?.name} — ${d.name}`; ul.appendChild(li);
         const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.sports?.name} — ${d.name}`; evDisc.appendChild(o);
       });
       return data ?? [];
     }
-    document.getElementById('sportForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('sportName').value.trim(); if (!name) return;
-      await supabase.from('sports').insert([{ name }]); document.getElementById('sportName').value=''; loadSports();
-    });
-    document.getElementById('discForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const sport_id = parseInt(document.getElementById('discSport').value,10);
-      const name = document.getElementById('discName').value.trim(); if (!sport_id || !name) return;
-      await supabase.from('disciplines').insert([{ sport_id, name }]); document.getElementById('discName').value=''; loadDisciplines();
+
+    // Gemengd velden tonen/verbergen
+    const evGender = document.getElementById('evGender');
+    const evMixedMen = document.getElementById('evMixedMen');
+    const evMixedWomen = document.getElementById('evMixedWomen');
+    evGender.addEventListener('change', () => {
+      const mixed = evGender.value === 'X';
+      evMixedMen.classList.toggle('hidden', !mixed);
+      evMixedWomen.classList.toggle('hidden', !mixed);
     });
 
-    // Event aanmaken via RPC
+    // Event aanmaken via admin_create_event2
     document.getElementById('eventForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const edition_id = document.getElementById('evEdition').value;
-      const disc_id = document.getElementById('evDisc').value;
-      const sport_id = document.getElementById('evSport').value; // alleen voor label/keuze
+      const sport_id = parseInt(document.getElementById('evSport').value,10);
+      const discVal = document.getElementById('evDisc').value;
+      const discipline_id = discVal ? parseInt(discVal,10) : null;
+
+      const sub_name = document.getElementById('evOnderdeel').value.trim() || null;
+      const gender = document.getElementById('evGender').value; // 'M','V','X'
       const is_team = document.getElementById('evTeam').checked;
       const min = parseInt(document.getElementById('evMin').value || '2',10);
       const maxp = parseInt(document.getElementById('evMax').value || '3',10);
       let rounds; try { rounds = JSON.parse(document.getElementById('evRounds').value || '["finale"]'); } catch { rounds = ["finale"]; }
 
-      // haal namen op
-      const { data: sport } = await supabase.from('sports').select('*').eq('id', sport_id).single();
-      const { data: disc }  = await supabase.from('disciplines').select('*').eq('id', disc_id).single();
+      const mixed_male_count = gender==='X' ? parseInt(evMixedMen.value || '0',10) : null;
+      const mixed_female_count = gender==='X' ? parseInt(evMixedWomen.value || '0',10) : null;
 
-      const { error } = await supabase.rpc('admin_create_event', {
+      const { error } = await supabase.rpc('admin_create_event2', {
         p_edition_id: edition_id,
-        p_sport_name: sport?.name,
-        p_discipline_name: disc?.name,
+        p_sport_id: sport_id,
+        p_discipline_id: discipline_id,
+        p_sub_name: sub_name,
+        p_gender: gender,
         p_is_team: is_team,
         p_min_countries: min,
         p_max_per_country: maxp,
         p_rounds: rounds,
-        p_format: {}
+        p_format: {},
+        p_mixed_male_count: mixed_male_count,
+        p_mixed_female_count: mixed_female_count
       });
-      if (error) alert(error.message);
-      loadEventsList();
+      if (error) { alert(error.message); return; }
+
+      document.getElementById('evOnderdeel').value='';
+      document.getElementById('evRounds').value='';
+      evMixedMen.value=''; evMixedWomen.value='';
+      await loadEventsList();
     });
 
     async function loadEventsList() {
@@ -618,13 +632,16 @@
       if (!ed) return;
       const { data } = await supabase
         .from('events')
-        .select('id, is_team, min_countries, max_athletes_per_country, rounds, disciplines(name, sports(name))')
+        .select('id, is_team, min_countries, max_athletes_per_country, rounds, gender, sub_name, mixed_male_count, mixed_female_count, disciplines(name, sports(name))')
         .eq('edition_id', ed)
         .order('created_at');
       const ul = document.getElementById('eventsList'); ul.innerHTML='';
       (data ?? []).forEach(ev => {
         const li = document.createElement('li');
-        li.textContent = `${ev.disciplines?.sports?.name} — ${ev.disciplines?.name} ${ev.is_team?'(team)':''} | rondes: ${JSON.stringify(ev.rounds)}`;
+        li.textContent =
+          `${ev.disciplines?.sports?.name ?? '(sport)'} — ${ev.disciplines?.name ?? '(geen discipline)'} ${ev.is_team?'(team)':''} | ` +
+          `gender: ${ev.gender} ${ev.sub_name ? '| onderdeel: '+ev.sub_name : ''} | rondes: ${JSON.stringify(ev.rounds)} ` +
+          `${ev.gender==='X' ? '| gemengd: ' + (ev.mixed_male_count??0) + 'M/' + (ev.mixed_female_count??0) + 'V' : ''}`;
         ul.appendChild(li);
       });
     }
@@ -701,14 +718,14 @@
 
     /* ===== Berichten ===== */
     async function loadMessages() {
-      const { data } = await supabase.from('system_messages').select('*, profiles!system_messages_created_by_fkey(email)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('system_messages').select('*').order('created_at', { ascending: false });
       const ul = document.getElementById('msgList'); ul.innerHTML='';
       (data ?? []).forEach(m => {
         const li = document.createElement('li');
         li.className = 'border rounded p-3';
         li.innerHTML = `<div class="font-semibold">${m.title}</div>
-                        <div class="text-slate-600 text-sm">${m.body}</div>
-                        <div class="text-xs text-slate-500 mt-1">${m.created_at}</div>`;
+                        <div class="text-slate-600 text-sm whitespace-pre-wrap">${m.body}</div>
+                        <div class="text-xs text-slate-500 mt-1">${new Date(m.created_at).toLocaleString()}</div>`;
         ul.appendChild(li);
       });
     }
