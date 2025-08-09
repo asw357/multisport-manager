@@ -1,786 +1,191 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Multisport-Manager</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Multisport Manager</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50">
-  <header class="bg-white border-b">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Admin Dashboard</h1>
-      <nav class="flex items-center gap-3">
-        <a class="text-sm hover:underline" href="manager.html">Manager</a>
-        <a class="px-3 py-1 rounded bg-slate-900 text-white text-sm" href="logout.html">Uitloggen</a>
-      </nav>
-    </div>
-  </header>
+<body class="bg-gray-100">
 
-  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
-    <div class="flex flex-wrap gap-2">
-      <button class="tab px-3 py-2 rounded-lg bg-slate-900 text-white" data-tab="admins">Admins</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="countries">Landen</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="profiles">Profielen</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="athletes">Atleten</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="editions">Edities</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="sports">Sporten & Onderdelen</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="schedule">Schema</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="mp">MP-regels</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="sim">Simulatie</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="messages">Berichten</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="tools">Tools</button>
-    </div>
+<div class="max-w-6xl mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
-    <!-- Admins -->
-    <section id="tab-admins" class="bg-white rounded-2xl shadow p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Admin allowlist</h2>
-        <form id="allowForm" class="flex flex-wrap gap-2">
-          <input id="allowEmail" type="email" class="border rounded-lg px-3 py-2 text-sm" placeholder="e-mail toevoegen..." required />
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-        </form>
-      </div>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr><th class="p-2 text-left">E-mail</th><th class="p-2 text-right">Acties</th></tr></thead>
-        <tbody id="allowBody"></tbody>
-      </table>
-    </section>
+  <!-- ====== Edities aanmaken ====== -->
+  <section class="mb-6 bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-2">Nieuwe editie aanmaken</h2>
+    <form id="editionForm" class="grid grid-cols-1 md:grid-cols-5 gap-2">
+      <select id="edSeason" class="border rounded-lg px-3 py-2 text-sm" required>
+        <option value="zomer">Zomer</option>
+        <option value="winter">Winter</option>
+      </select>
+      <input id="edCity" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gaststad" />
+      <input id="edCountry" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gastland" />
+      <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Start (optioneel)" />
+      <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Eind (optioneel)" />
+      <button class="md:col-span-5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
+    </form>
 
-    <!-- Landen -->
-    <section id="tab-countries" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Landen</h2>
-        <form id="countryForm" class="flex gap-2">
-          <input id="countryName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Nieuw land..." />
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-        </form>
-      </div>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr><th class="p-2 text-left">ID</th><th class="p-2 text-left">Naam</th><th class="p-2 text-left">Bezet</th><th class="p-2">Acties</th></tr></thead>
-        <tbody id="countriesBody"></tbody>
-      </table>
-    </section>
+    <ul id="editionList" class="mt-4 space-y-1"></ul>
+  </section>
 
-    <!-- Profielen -->
-    <section id="tab-profiles" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="mb-4 flex flex-wrap items-center gap-2">
-        <h2 class="text-lg font-semibold">Profielen</h2>
-        <input id="profileSearch" class="ml-auto border rounded-lg px-3 py-2 text-sm" placeholder="Zoeken (naam of e-mail)..." />
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm border rounded-lg overflow-hidden">
-          <thead class="bg-slate-100">
-            <tr><th class="p-2 text-left">Manager</th><th class="p-2 text-left">E-mail</th><th class="p-2 text-left">Land</th><th class="p-2 text-left">MP</th><th class="p-2 text-left">Admin</th><th class="p-2">Acties</th></tr>
-          </thead>
-          <tbody id="profilesBody"></tbody>
-        </table>
-      </div>
-    </section>
+  <!-- ====== Sporten & Onderdelen ====== -->
+  <section class="mb-6 bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-2">Sporten & Onderdelen</h2>
+    <form id="eventForm" class="flex flex-wrap gap-2 items-end">
+      <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
+      <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
+      <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
+        <option value="">(geen discipline)</option>
+      </select>
+      <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel" />
+      <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
+        <option value="M">Mannen</option>
+        <option value="V">Vrouwen</option>
+        <option value="X">Gemengd</option>
+      </select>
+      <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
+      <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
+      <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
+      <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
+      <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
+      <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["finale"]' />
+      <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
+    </form>
 
-    <!-- Atleten -->
-    <section id="tab-athletes" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-        <h2 class="text-lg font-semibold">Atleten</h2>
-        <div class="flex gap-2">
-          <input id="athFilterUser" class="border rounded-lg px-3 py-2 text-sm" placeholder="Filter op user_id (auth)..." />
-          <button id="athFilterBtn" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Filter</button>
-        </div>
-      </div>
-      <form id="athleteForm" class="flex flex-wrap gap-2 mb-4">
-        <input id="athUserId" class="border rounded-lg px-3 py-2 text-sm" placeholder="User ID (auth)" required />
-        <input id="athName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Naam" required />
-        <input id="athSport" class="border rounded-lg px-3 py-2 text-sm" placeholder="Sport" required />
-        <input id="athDisc" class="border rounded-lg px-3 py-2 text-sm" placeholder="Discipline" required />
-        <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-      </form>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm border rounded-lg overflow-hidden">
-          <thead class="bg-slate-100">
-            <tr><th class="p-2 text-left">ID</th><th class="p-2 text-left">User</th><th class="p-2 text-left">Naam</th><th class="p-2 text-left">Sport</th><th class="p-2 text-left">Discipline</th><th class="p-2">Acties</th></tr>
-          </thead>
-          <tbody id="athletesBody"></tbody>
-        </table>
-      </div>
-    </section>
+    <ul id="eventList" class="mt-4 space-y-1"></ul>
+  </section>
+</div>
 
-    <!-- Edities -->
-    <section id="tab-editions" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="mb-4">
-        <h2 class="text-lg font-semibold mb-3">Edities</h2>
-        <form id="editionForm" class="ml-auto grid grid-cols-1 md:grid-cols-5 gap-2">
-          <select id="edSeason" class="border rounded-lg px-3 py-2 text-sm" required>
-            <option value="zomer">Zomer</option>
-            <option value="winter">Winter</option>
-          </select>
-          <input id="edCity" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gaststad" />
-          <input id="edCountry" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gastland" />
-          <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Start (optioneel)" />
-          <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Eind (optioneel)" />
-          <button class="md:col-span-5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-        </form>
-      </div>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr>
-          <th class="p-2 text-left">Naam</th>
-          <th class="p-2 text-left">Seizoen</th>
-          <th class="p-2 text-left">Gaststad</th>
-          <th class="p-2 text-left">Gastland</th>
-          <th class="p-2 text-left">Start</th>
-          <th class="p-2 text-left">Eind</th>
-          <th class="p-2">Acties</th>
-        </tr></thead>
-        <tbody id="editionsBody"></tbody>
-      </table>
-    </section>
+<script>
+const SUPABASE_URL = "https://yqbejgnhmizkeuxxpbbb.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <!-- Sporten & Onderdelen -->
-    <section id="tab-sports" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div>
-          <h3 class="font-semibold mb-2">Sporten</h3>
-          <form id="sportForm" class="flex gap-2 mb-3">
-            <input id="sportName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Sportnaam" required />
-            <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-          </form>
-          <ul id="sportsList" class="text-sm space-y-1"></ul>
-        </div>
-        <div>
-          <h3 class="font-semibold mb-2">Onderdelen (disciplines)</h3>
-          <form id="discForm" class="flex flex-wrap gap-2 mb-3">
-            <select id="discSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-            <input id="discName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Disciplinenaam (optioneel)" />
-            <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-          </form>
-          <ul id="discList" class="text-sm space-y-1"></ul>
-        </div>
-      </div>
+// Load data
+async function loadEditions() {
+  const { data } = await supabase.from('editions').select('*').order('created_at');
+  const list = document.getElementById('editionList');
+  const select = document.getElementById('evEdition');
+  list.innerHTML = '';
+  select.innerHTML = '';
+  data.forEach(ed => {
+    const li = document.createElement('li');
+    li.textContent = `${ed.name} (${ed.season}) - ${ed.host_city}, ${ed.host_country}`;
+    list.appendChild(li);
+    const opt = document.createElement('option');
+    opt.value = ed.id;
+    opt.textContent = ed.name;
+    select.appendChild(opt);
+  });
+}
 
-      <hr class="my-6">
+async function loadSports() {
+  const { data } = await supabase.from('sports').select('*').order('name');
+  const select = document.getElementById('evSport');
+  select.innerHTML = '';
+  data.forEach(sp => {
+    const opt = document.createElement('option');
+    opt.value = sp.id;
+    opt.textContent = sp.name;
+    select.appendChild(opt);
+  });
+}
 
-      <div>
-        <h3 class="font-semibold mb-2">Event (Onderdeel) koppelen aan editie</h3>
-        <form id="eventForm" class="flex flex-wrap gap-2 items-end">
-          <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
+async function loadDisciplines() {
+  const { data } = await supabase.from('disciplines').select('*').order('name');
+  const select = document.getElementById('evDisc');
+  select.innerHTML = '<option value="">(geen discipline)</option>';
+  data.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.id;
+    opt.textContent = d.name;
+    select.appendChild(opt);
+  });
+}
 
-          <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-          <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
-            <option value="">(geen discipline)</option>
-          </select>
+async function loadEvents() {
+  const { data } = await supabase.from('events')
+    .select('*, disciplines(name, sports(name))')
+    .order('created_at');
+  const list = document.getElementById('eventList');
+  list.innerHTML = '';
+  data.forEach(ev => {
+    const li = document.createElement('li');
+    li.textContent = `${ev.disciplines?.sports?.name ?? '(sport)'} - ${ev.disciplines?.name ?? '(geen discipline)'} | ${ev.sub_name ?? ''} | ${ev.gender}`;
+    list.appendChild(li);
+  });
+}
 
-          <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m)" />
-          <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
-            <option value="M">Mannen</option>
-            <option value="V">Vrouwen</option>
-            <option value="X">Gemengd</option>
-          </select>
-          <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
-          <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
+// Edition form submit
+document.getElementById('editionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const season = document.getElementById('edSeason').value;
+  const city = document.getElementById('edCity').value.trim();
+  const country = document.getElementById('edCountry').value.trim();
+  const start = document.getElementById('edStart').value || null;
+  const end = document.getElementById('edEnd').value || null;
+  const { data: id, error } = await supabase.rpc('admin_create_edition', {
+    p_season: season, p_host_city: city, p_host_country: country
+  });
+  if (error) { alert(error.message); return; }
+  if (start || end) {
+    await supabase.from('editions').update({ start_date: start, end_date: end }).eq('id', id);
+  }
+  await loadEditions();
+});
 
-          <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
-          <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
-          <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
-          <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
+// Gender change for mixed
+document.getElementById('evGender').addEventListener('change', () => {
+  const mixed = document.getElementById('evGender').value === 'X';
+  document.getElementById('evMixedMen').classList.toggle('hidden', !mixed);
+  document.getElementById('evMixedWomen').classList.toggle('hidden', !mixed);
+});
 
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-        </form>
+// Event form submit (FIXED: preventDefault)
+document.getElementById('eventForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const edition_id = document.getElementById('evEdition').value;
+  const sport_id = parseInt(document.getElementById('evSport').value);
+  const discVal = document.getElementById('evDisc').value;
+  const discipline_id = discVal ? parseInt(discVal) : null;
+  const sub_name = document.getElementById('evOnderdeel').value.trim() || null;
+  const gender = document.getElementById('evGender').value;
+  const is_team = document.getElementById('evTeam').checked;
+  const min_countries = parseInt(document.getElementById('evMin').value || '2');
+  const max_per_country = parseInt(document.getElementById('evMax').value || '3');
+  let rounds;
+  try { rounds = JSON.parse(document.getElementById('evRounds').value || '["finale"]'); }
+  catch { rounds = ["finale"]; }
+  const mixed_male_count = gender === 'X' ? parseInt(document.getElementById('evMixedMen').value || '0') : null;
+  const mixed_female_count = gender === 'X' ? parseInt(document.getElementById('evMixedWomen').value || '0') : null;
 
-        <div class="mt-4">
-          <h4 class="font-semibold mb-2">Events (per editie)</h4>
-          <select id="evListEdition" class="border rounded-lg px-3 py-2 text-sm mb-3"></select>
-          <ul id="eventsList" class="text-sm space-y-1"></ul>
-        </div>
-      </div>
-    </section>
+  const { error } = await supabase.rpc('admin_create_event2', {
+    p_edition_id: edition_id,
+    p_sport_id: sport_id,
+    p_discipline_id: discipline_id,
+    p_sub_name: sub_name,
+    p_gender: gender,
+    p_is_team: is_team,
+    p_min_countries: min_countries,
+    p_max_per_country: max_per_country,
+    p_rounds: rounds,
+    p_format: {},
+    p_mixed_male_count: mixed_male_count,
+    p_mixed_female_count: mixed_female_count
+  });
+  if (error) { alert(error.message); return; }
+  await loadEvents();
+});
 
-    <!-- Schema -->
-    <section id="tab-schedule" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex items-center gap-2 mb-4">
-        <h2 class="text-lg font-semibold">Schema</h2>
-        <select id="schEdition" class="ml-auto border rounded-lg px-3 py-2 text-sm"></select>
-        <button id="btnGenSchedule" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Genereer schema</button>
-      </div>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr><th class="p-2 text-left">Dag</th><th class="p-2 text-left">Event</th><th class="p-2 text-left">Ronde</th><th class="p-2 text-right">Volgorde</th></tr></thead>
-        <tbody id="scheduleBody"></tbody>
-      </table>
-    </section>
-
-    <!-- MP-regels -->
-    <section id="tab-mp" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex flex-wrap items-center gap-2 mb-4">
-        <h2 class="text-lg font-semibold">MP-regels</h2>
-        <select id="mpEdition" class="ml-auto border rounded-lg px-3 py-2 text-sm"></select>
-      </div>
-      <form id="mpForm" class="flex flex-wrap gap-2 mb-4">
-        <input id="mpPlace" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Plaats" required />
-        <input id="mpValue" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="MP" required />
-        <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Opslaan</button>
-      </form>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
-        <thead class="bg-slate-100"><tr><th class="p-2 text-left">Plaats</th><th class="p-2 text-left">MP</th></tr></thead>
-        <tbody id="mpBody"></tbody>
-      </table>
-    </section>
-
-    <!-- Simulatie -->
-    <section id="tab-sim" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex flex-wrap items-center gap-2">
-        <h2 class="text-lg font-semibold">Simulatie</h2>
-        <select id="simEdition" class="ml-auto border rounded-lg px-3 py-2 text-sm"></select>
-        <select id="simStatus" class="border rounded-lg px-3 py-2 text-sm">
-          <option value="idle">idle</option>
-          <option value="running">running</option>
-          <option value="paused">paused</option>
-        </select>
-        <input id="simDay" type="date" class="border rounded-lg px-3 py-2 text-sm" />
-        <button id="btnSetSim" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Opslaan</button>
-      </div>
-      <div id="simInfo" class="mt-4 text-sm text-slate-600"></div>
-    </section>
-
-    <!-- Berichten -->
-    <section id="tab-messages" class="bg-white rounded-2xl shadow p-6 hidden">
-      <h2 class="text-lg font-semibold mb-4">Berichten</h2>
-      <form id="msgForm" class="flex flex-col gap-2 mb-4">
-        <input id="msgTitle" class="border rounded-lg px-3 py-2 text-sm" placeholder="Titel" required />
-        <textarea id="msgBody" class="border rounded-lg px-3 py-2 text-sm" placeholder="Bericht..." rows="4" required></textarea>
-        <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm w-fit">Verstuur</button>
-      </form>
-      <ul id="msgList" class="text-sm space-y-2"></ul>
-    </section>
-
-    <!-- Tools -->
-    <section id="tab-tools" class="bg-white rounded-2xl shadow p-6 hidden">
-      <h2 class="text-lg font-semibold mb-4">Tools</h2>
-      <div class="flex flex-wrap gap-2">
-        <button id="exportProfiles" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Exporteer Profielen (CSV)</button>
-        <button id="exportAthletes" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Exporteer Atleten (CSV)</button>
-        <button id="exportSchedule" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Exporteer Schema (CSV)</button>
-      </div>
-    </section>
-  </main>
-
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(
-      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-    );
-
-    /* ===== Guard: alleen admins ===== */
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session) { alert('Eerst inloggen.'); location.href = 'login.html'; }
-    const { data: meDb, error: meErr } = await supabase
-      .from('profiles').select('*').eq('user_id', session.session.user.id).single();
-    if (meErr || !meDb?.is_admin) { alert('Geen toegang: alleen voor admins.'); location.href = 'manager.html'; }
-    localStorage.setItem('user', JSON.stringify(meDb));
-
-    /* ===== Tabs ===== */
-    const tabs = document.querySelectorAll('.tab');
-    const panels = {
-      admins: document.getElementById('tab-admins'),
-      countries: document.getElementById('tab-countries'),
-      profiles: document.getElementById('tab-profiles'),
-      athletes: document.getElementById('tab-athletes'),
-      editions: document.getElementById('tab-editions'),
-      sports: document.getElementById('tab-sports'),
-      schedule: document.getElementById('tab-schedule'),
-      mp: document.getElementById('tab-mp'),
-      sim: document.getElementById('tab-sim'),
-      messages: document.getElementById('tab-messages'),
-      tools: document.getElementById('tab-tools'),
-    };
-    tabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabs.forEach(b => { b.classList.remove('bg-slate-900','text-white'); b.classList.add('bg-white','border'); });
-        btn.classList.add('bg-slate-900','text-white'); btn.classList.remove('bg-white','border');
-        Object.values(panels).forEach(p => p.classList.add('hidden'));
-        panels[btn.dataset.tab].classList.remove('hidden');
-      });
-    });
-
-    /* ===== Helpers ===== */
-    function dl(filename, text) {
-      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
-    function toCSV(rows) {
-      if (!rows?.length) return '';
-      const headers = Object.keys(rows[0]);
-      const esc = v => `"${String(v ?? '').replaceAll('"','""')}"`;
-      const lines = [headers.map(esc).join(',')];
-      rows.forEach(r => lines.push(headers.map(h => esc(r[h])).join(',')));
-      return lines.join('\n');
-    }
-
-    /* ===== Admin allowlist ===== */
-    async function loadAllowlist() {
-      const { data } = await supabase.from('admin_allowlist').select('*').order('email');
-      const tbody = document.getElementById('allowBody'); tbody.innerHTML = '';
-      (data ?? []).forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-2">${row.email}</td>
-          <td class="p-2 text-right"><button class="px-2 py-1 text-xs border rounded del">Verwijder</button></td>`;
-        tr.querySelector('.del').addEventListener('click', async () => {
-          if (row.email.toLowerCase() === meDb.email.toLowerCase()) { alert('Je eigen admin e-mail kun je niet verwijderen.'); return; }
-          await supabase.from('admin_allowlist').delete().eq('email', row.email);
-          await loadAllowlist(); await loadProfiles();
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('allowForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('allowEmail').value.trim().toLowerCase();
-      if (!email) return;
-      await supabase.from('admin_allowlist').insert([{ email }]);
-      document.getElementById('allowEmail').value = '';
-      await loadAllowlist(); await loadProfiles();
-    });
-
-    /* ===== Landen ===== */
-    async function loadCountries() {
-      const { data } = await supabase.from('countries').select('*').order('id');
-      const tbody = document.getElementById('countriesBody'); tbody.innerHTML='';
-      (data ?? []).forEach(c => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2">${c.id}</td><td class="p-2">${c.name}</td><td class="p-2">${c.is_taken?'Ja':'Nee'}</td>
-          <td class="p-2 text-right">
-            <button class="px-2 py-1 text-xs border rounded toggle">Toggle bezet</button>
-            <button class="px-2 py-1 text-xs border rounded del">Verwijder</button>
-          </td>`;
-        tr.querySelector('.toggle').addEventListener('click', async () => {
-          await supabase.from('countries').update({ is_taken: !c.is_taken }).eq('id', c.id); loadCountries();
-        });
-        tr.querySelector('.del').addEventListener('click', async () => {
-          await supabase.from('countries').delete().eq('id', c.id); loadCountries();
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('countryForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('countryName').value.trim(); if (!name) return;
-      await supabase.from('countries').insert([{ name }]); document.getElementById('countryName').value=''; loadCountries();
-    });
-    async function getFreeCountries() {
-      const { data } = await supabase.from('countries').select('*').eq('is_taken', false).order('id');
-      return data ?? [];
-    }
-
-    /* ===== Profielen ===== */
-    let allProfiles = [];
-    async function loadProfiles() {
-      const { data } = await supabase.from('profiles').select('*').order('created_at');
-      allProfiles = data ?? []; renderProfiles(allProfiles);
-    }
-    function renderProfiles(rows) {
-      const tbody = document.getElementById('profilesBody'); tbody.innerHTML='';
-      rows.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2">${p.manager_name ?? '-'}</td>
-          <td class="p-2">${p.email}</td>
-          <td class="p-2">
-            <div class="flex items-center gap-2">
-              <input class="border rounded px-2 py-1 w-40 countryInp" value="${p.country ?? ''}" />
-              <select class="border rounded px-2 py-1 w-40 freeCountrySel"><option value="">(vrij land kiezen)</option></select>
-            </div>
-          </td>
-          <td class="p-2"><input type="number" class="border rounded px-2 py-1 w-24 mpInp" value="${p.mp ?? 0}" /></td>
-          <td class="p-2"><input type="checkbox" class="adminChk" ${p.is_admin?'checked':''} ${p.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}></td>
-          <td class="p-2 text-right flex flex-wrap gap-2">
-            <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
-            <button class="px-2 py-1 text-xs border rounded mp10">+10 MP</button>
-            <button class="px-2 py-1 text-xs border rounded mp100">Reset 100</button>
-            <button class="px-2 py-1 text-xs border rounded danger del" ${p.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}>Verwijder</button>
-          </td>`;
-        (async () => {
-          const sel = tr.querySelector('.freeCountrySel'); (await getFreeCountries()).forEach(fc => {
-            const o = document.createElement('option'); o.value = fc.name; o.textContent = fc.name; sel.appendChild(o);
-          });
-        })();
-
-        tr.querySelector('.save').addEventListener('click', async () => {
-          const country = tr.querySelector('.countryInp').value.trim();
-          const mp = parseInt(tr.querySelector('.mpInp').value || '0', 10);
-          const wantAdmin = tr.querySelector('.adminChk').checked;
-
-          if (wantAdmin && !p.is_admin) {
-            await supabase.from('admin_allowlist').insert([{ email: p.email.toLowerCase() }]).catch(()=>{});
-          } else if (!wantAdmin && p.is_admin && p.email.toLowerCase()!==meDb.email.toLowerCase()) {
-            await supabase.from('admin_allowlist').delete().eq('email', p.email.toLowerCase());
-          }
-          await supabase.from('profiles').update({ country, mp }).eq('user_id', p.user_id);
-          await loadAllowlist(); await loadProfiles();
-        });
-
-        tr.querySelector('.mp10').addEventListener('click', async () => {
-          await supabase.rpc('admin_award_mp', { p_user_id: p.user_id, p_delta: 10 });
-          await loadProfiles();
-        });
-        tr.querySelector('.mp100').addEventListener('click', async () => {
-          await supabase.from('profiles').update({ mp: 100 }).eq('user_id', p.user_id);
-          await loadProfiles();
-        });
-        tr.querySelector('.del').addEventListener('click', async () => {
-          if (p.email.toLowerCase()===meDb.email.toLowerCase()) { alert('Jezelf kun je niet verwijderen.'); return; }
-          await supabase.from('profiles').delete().eq('user_id', p.user_id);
-          await loadProfiles();
-        });
-
-        document.getElementById('profilesBody').appendChild(tr);
-      });
-    }
-    document.getElementById('profileSearch').addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase();
-      renderProfiles((allProfiles??[]).filter(p =>
-        (p.manager_name??'').toLowerCase().includes(q) || (p.email??'').toLowerCase().includes(q)
-      ));
-    });
-
-    /* ===== Atleten ===== */
-    async function loadAthletes(filterUserId='') {
-      let q = supabase.from('athletes').select('*').order('created_at');
-      if (filterUserId) q = q.eq('user_id', filterUserId);
-      const { data } = await q;
-      const tbody = document.getElementById('athletesBody'); tbody.innerHTML='';
-      (data ?? []).forEach(a => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2">${a.id}</td><td class="p-2">${a.user_id}</td>
-          <td class="p-2"><input class="border rounded px-2 py-1 w-40 nameInp" value="${a.name}" /></td>
-          <td class="p-2"><input class="border rounded px-2 py-1 w-36 sportInp" value="${a.sport}" /></td>
-          <td class="p-2"><input class="border rounded px-2 py-1 w-44 discInp" value="${a.discipline}" /></td>
-          <td class="p-2 text-right">
-            <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
-            <button class="px-2 py-1 text-xs border rounded danger del">Verwijder</button>
-          </td>`;
-        tr.querySelector('.save').addEventListener('click', async () => {
-          await supabase.from('athletes').update({
-            name: tr.querySelector('.nameInp').value.trim(),
-            sport: tr.querySelector('.sportInp').value.trim(),
-            discipline: tr.querySelector('.discInp').value.trim()
-          }).eq('id', a.id);
-          loadAthletes(document.getElementById('athFilterUser').value.trim());
-        });
-        tr.querySelector('.del').addEventListener('click', async () => {
-          await supabase.from('athletes').delete().eq('id', a.id);
-          loadAthletes(document.getElementById('athFilterUser').value.trim());
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('athleteForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const user_id = document.getElementById('athUserId').value.trim();
-      const name = document.getElementById('athName').value.trim();
-      const sport = document.getElementById('athSport').value.trim();
-      const discipline = document.getElementById('athDisc').value.trim();
-      if (!user_id || !name || !sport || !discipline) return;
-      await supabase.from('athletes').insert([{ user_id, name, sport, discipline, stats: { snelheid: 5, kracht: 5 } }]);
-      ['athUserId','athName','athSport','athDisc'].forEach(id => document.getElementById(id).value='');
-      loadAthletes(document.getElementById('athFilterUser').value.trim());
-    });
-    document.getElementById('athFilterBtn').addEventListener('click', () => {
-      loadAthletes(document.getElementById('athFilterUser').value.trim());
-    });
-
-    /* ===== Edities ===== */
-    async function loadEditionsInto(selects) {
-      const { data } = await supabase.from('editions').select('*').order('start_date');
-      (selects ?? []).forEach(sel => {
-        sel.innerHTML = '';
-        data?.forEach(ed => {
-          const o = document.createElement('option');
-          o.value = ed.id;
-          o.textContent = `${ed.name} (${ed.start_date ?? '-'} - ${ed.end_date ?? '-'})`;
-          sel.appendChild(o);
-        });
-      });
-      return data ?? [];
-    }
-    async function loadEditionsTable() {
-      const eds = await loadEditionsInto([
-        document.getElementById('evEdition'),
-        document.getElementById('evListEdition'),
-        document.getElementById('schEdition'),
-        document.getElementById('mpEdition'),
-        document.getElementById('simEdition')
-      ]);
-      const tbody = document.getElementById('editionsBody'); tbody.innerHTML='';
-      (eds ?? []).forEach(ed => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-2">${ed.name}</td>
-                        <td class="p-2">${ed.season ?? '-'}</td>
-                        <td class="p-2">${ed.host_city ?? '-'}</td>
-                        <td class="p-2">${ed.host_country ?? '-'}</td>
-                        <td class="p-2">${ed.start_date ?? '-'}</td>
-                        <td class="p-2">${ed.end_date ?? '-'}</td>
-                        <td class="p-2 text-right"><button class="px-2 py-1 text-xs border rounded del">Verwijder</button></td>`;
-        tr.querySelector('.del').addEventListener('click', async () => {
-          await supabase.from('editions').delete().eq('id', ed.id); loadEditionsTable();
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('editionForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const season = document.getElementById('edSeason').value; // 'zomer' | 'winter'
-      const host_city = document.getElementById('edCity').value.trim();
-      const host_country = document.getElementById('edCountry').value.trim();
-      const start_date = document.getElementById('edStart').value || null;
-      const end_date = document.getElementById('edEnd').value || null;
-
-      const { data: newId, error } = await supabase.rpc('admin_create_edition', {
-        p_season: season, p_host_city: host_city, p_host_country: host_country
-      });
-      if (error) { alert(error.message); return; }
-
-      if (start_date || end_date) {
-        await supabase.from('editions').update({ start_date, end_date }).eq('id', newId);
-      }
-
-      ['edCity','edCountry','edStart','edEnd'].forEach(id => document.getElementById(id).value='');
-      document.getElementById('edSeason').value='zomer';
-      await loadEditionsTable();
-    });
-
-    /* ===== Sporten & Onderdelen ===== */
-    async function loadSports() {
-      const { data } = await supabase.from('sports').select('*').order('name');
-      const ul = document.getElementById('sportsList'); ul.innerHTML='';
-      const evSport = document.getElementById('evSport'); evSport.innerHTML='';
-      const discSport = document.getElementById('discSport'); discSport.innerHTML='';
-      (data ?? []).forEach(s => {
-        const li = document.createElement('li');
-        li.textContent = s.name; ul.appendChild(li);
-        const o1 = document.createElement('option'); o1.value = s.id; o1.textContent = s.name; evSport.appendChild(o1);
-        const o2 = document.createElement('option'); o2.value = s.id; o2.textContent = s.name; discSport.appendChild(o2);
-      });
-      return data ?? [];
-    }
-    async function loadDisciplines() {
-      const { data } = await supabase.from('disciplines').select('id, name, sport_id, sports(name)').order('name');
-      const ul = document.getElementById('discList'); ul.innerHTML='';
-      const evDisc = document.getElementById('evDisc'); evDisc.innerHTML='<option value="">(geen discipline)</option>';
-      (data ?? []).forEach(d => {
-        const li = document.createElement('li');
-        li.textContent = `${d.sports?.name} — ${d.name}`; ul.appendChild(li);
-        const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.sports?.name} — ${d.name}`; evDisc.appendChild(o);
-      });
-      return data ?? [];
-    }
-
-    // Gemengd velden tonen/verbergen
-    const evGender = document.getElementById('evGender');
-    const evMixedMen = document.getElementById('evMixedMen');
-    const evMixedWomen = document.getElementById('evMixedWomen');
-    evGender.addEventListener('change', () => {
-      const mixed = evGender.value === 'X';
-      evMixedMen.classList.toggle('hidden', !mixed);
-      evMixedWomen.classList.toggle('hidden', !mixed);
-    });
-
-    // Event aanmaken via admin_create_event2
-    document.getElementById('eventForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const edition_id = document.getElementById('evEdition').value;
-      const sport_id = parseInt(document.getElementById('evSport').value,10);
-      const discVal = document.getElementById('evDisc').value;
-      const discipline_id = discVal ? parseInt(discVal,10) : null;
-
-      const sub_name = document.getElementById('evOnderdeel').value.trim() || null;
-      const gender = document.getElementById('evGender').value; // 'M','V','X'
-      const is_team = document.getElementById('evTeam').checked;
-      const min = parseInt(document.getElementById('evMin').value || '2',10);
-      const maxp = parseInt(document.getElementById('evMax').value || '3',10);
-      let rounds; try { rounds = JSON.parse(document.getElementById('evRounds').value || '["finale"]'); } catch { rounds = ["finale"]; }
-
-      const mixed_male_count = gender==='X' ? parseInt(evMixedMen.value || '0',10) : null;
-      const mixed_female_count = gender==='X' ? parseInt(evMixedWomen.value || '0',10) : null;
-
-      const { error } = await supabase.rpc('admin_create_event2', {
-        p_edition_id: edition_id,
-        p_sport_id: sport_id,
-        p_discipline_id: discipline_id,
-        p_sub_name: sub_name,
-        p_gender: gender,
-        p_is_team: is_team,
-        p_min_countries: min,
-        p_max_per_country: maxp,
-        p_rounds: rounds,
-        p_format: {},
-        p_mixed_male_count: mixed_male_count,
-        p_mixed_female_count: mixed_female_count
-      });
-      if (error) { alert(error.message); return; }
-
-      document.getElementById('evOnderdeel').value='';
-      document.getElementById('evRounds').value='';
-      evMixedMen.value=''; evMixedWomen.value='';
-      await loadEventsList();
-    });
-
-    async function loadEventsList() {
-      const ed = document.getElementById('evListEdition').value;
-      if (!ed) return;
-      const { data } = await supabase
-        .from('events')
-        .select('id, is_team, min_countries, max_athletes_per_country, rounds, gender, sub_name, mixed_male_count, mixed_female_count, disciplines(name, sports(name))')
-        .eq('edition_id', ed)
-        .order('created_at');
-      const ul = document.getElementById('eventsList'); ul.innerHTML='';
-      (data ?? []).forEach(ev => {
-        const li = document.createElement('li');
-        li.textContent =
-          `${ev.disciplines?.sports?.name ?? '(sport)'} — ${ev.disciplines?.name ?? '(geen discipline)'} ${ev.is_team?'(team)':''} | ` +
-          `gender: ${ev.gender} ${ev.sub_name ? '| onderdeel: '+ev.sub_name : ''} | rondes: ${JSON.stringify(ev.rounds)} ` +
-          `${ev.gender==='X' ? '| gemengd: ' + (ev.mixed_male_count??0) + 'M/' + (ev.mixed_female_count??0) + 'V' : ''}`;
-        ul.appendChild(li);
-      });
-    }
-    document.getElementById('evListEdition').addEventListener('change', loadEventsList);
-
-    /* ===== Schema ===== */
-    async function loadSchedule() {
-      const ed = document.getElementById('schEdition').value;
-      if (!ed) return;
-      const { data } = await supabase
-        .from('schedule')
-        .select('day, round, seq, events(id, disciplines(name, sports(name)))')
-        .eq('edition_id', ed)
-        .order('day').order('seq');
-      const tbody = document.getElementById('scheduleBody'); tbody.innerHTML='';
-      (data ?? []).forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-2">${r.day}</td>
-          <td class="p-2">${r.events?.disciplines?.sports?.name} — ${r.events?.disciplines?.name}</td>
-          <td class="p-2">${r.round}</td>
-          <td class="p-2 text-right">${r.seq}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('btnGenSchedule').addEventListener('click', async () => {
-      const ed = document.getElementById('schEdition').value;
-      if (!ed) return;
-      const { error } = await supabase.rpc('admin_generate_schedule', { p_edition_id: ed });
-      if (error) alert(error.message);
-      loadSchedule();
-    });
-    document.getElementById('schEdition').addEventListener('change', loadSchedule);
-
-    /* ===== MP-regels ===== */
-    async function loadMpRules() {
-      const ed = document.getElementById('mpEdition').value;
-      if (!ed) return;
-      const { data } = await supabase.from('mp_rules').select('*').eq('edition_id', ed).order('place');
-      const tbody = document.getElementById('mpBody'); tbody.innerHTML='';
-      (data ?? []).forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-2">${r.place}</td><td class="p-2">${r.mp}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('mpForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const ed = document.getElementById('mpEdition').value;
-      const place = parseInt(document.getElementById('mpPlace').value,10);
-      const mp = parseInt(document.getElementById('mpValue').value,10);
-      const { error } = await supabase.rpc('admin_set_mp_rule', { p_edition_id: ed, p_event_id: null, p_place: place, p_mp: mp });
-      if (error) alert(error.message);
-      document.getElementById('mpPlace').value=''; document.getElementById('mpValue').value='';
-      loadMpRules();
-    });
-    document.getElementById('mpEdition').addEventListener('change', loadMpRules);
-
-    /* ===== Simulatie ===== */
-    async function loadSimInfo() {
-      const ed = document.getElementById('simEdition').value;
-      if (!ed) return;
-      const { data } = await supabase.from('simulation_state').select('*').eq('edition_id', ed).single();
-      document.getElementById('simInfo').textContent = data ? `Status: ${data.status}, Dag: ${data.current_day ?? '-'}` : 'Geen status.';
-    }
-    document.getElementById('btnSetSim').addEventListener('click', async () => {
-      const ed = document.getElementById('simEdition').value;
-      const status = document.getElementById('simStatus').value;
-      const day = document.getElementById('simDay').value || null;
-      const { error } = await supabase.rpc('admin_set_sim_state', { p_edition_id: ed, p_status: status, p_current_day: day });
-      if (error) alert(error.message);
-      loadSimInfo();
-    });
-    document.getElementById('simEdition').addEventListener('change', loadSimInfo);
-
-    /* ===== Berichten ===== */
-    async function loadMessages() {
-      const { data } = await supabase.from('system_messages').select('*').order('created_at', { ascending: false });
-      const ul = document.getElementById('msgList'); ul.innerHTML='';
-      (data ?? []).forEach(m => {
-        const li = document.createElement('li');
-        li.className = 'border rounded p-3';
-        li.innerHTML = `<div class="font-semibold">${m.title}</div>
-                        <div class="text-slate-600 text-sm whitespace-pre-wrap">${m.body}</div>
-                        <div class="text-xs text-slate-500 mt-1">${new Date(m.created_at).toLocaleString()}</div>`;
-        ul.appendChild(li);
-      });
-    }
-    document.getElementById('msgForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = document.getElementById('msgTitle').value.trim();
-      const body  = document.getElementById('msgBody').value.trim();
-      const { error } = await supabase.rpc('admin_send_message', { p_title: title, p_body: body });
-      if (error) alert(error.message);
-      document.getElementById('msgTitle').value=''; document.getElementById('msgBody').value='';
-      loadMessages();
-    });
-
-    /* ===== Tools (CSV export) ===== */
-    document.getElementById('exportProfiles').addEventListener('click', async () => {
-      const { data } = await supabase.from('profiles').select('*').order('created_at');
-      dl(`profiles_${new Date().toISOString().slice(0,10)}.csv`, toCSV(data ?? []));
-    });
-    document.getElementById('exportAthletes').addEventListener('click', async () => {
-      const { data } = await supabase.from('athletes').select('*').order('created_at');
-      dl(`athletes_${new Date().toISOString().slice(0,10)}.csv`, toCSV(data ?? []));
-    });
-    document.getElementById('exportSchedule').addEventListener('click', async () => {
-      const ed = document.getElementById('schEdition').value;
-      const { data } = await supabase
-        .from('schedule').select('day, round, seq, events(id, disciplines(name, sports(name)))')
-        .eq('edition_id', ed).order('day').order('seq');
-      const flat = (data ?? []).map(r => ({
-        day: r.day,
-        round: r.round,
-        seq: r.seq,
-        sport: r.events?.disciplines?.sports?.name,
-        discipline: r.events?.disciplines?.name
-      }));
-      dl(`schedule_${new Date().toISOString().slice(0,10)}.csv`, toCSV(flat));
-    });
-
-    /* ===== Initial load ===== */
-    await loadAllowlist();
-    await loadCountries();
-    await loadProfiles();
-    await loadAthletes();
-    await loadEditionsTable();
-    await loadSports(); await loadDisciplines();
-    await loadEventsList();
-    await loadSchedule();
-    await loadMpRules();
-    await loadSimInfo();
-    await loadMessages();
-
-    // koppel selects
-    document.getElementById('evListEdition').dispatchEvent(new Event('change'));
-    document.getElementById('schEdition').dispatchEvent(new Event('change'));
-    document.getElementById('mpEdition').dispatchEvent(new Event('change'));
-    document.getElementById('simEdition').dispatchEvent(new Event('change'));
-  </script>
+// Init
+(async () => {
+  await loadEditions();
+  await loadSports();
+  await loadDisciplines();
+  await loadEvents();
+})();
+</script>
 </body>
 </html>
