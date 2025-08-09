@@ -25,9 +25,9 @@
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="athletes">Atleten</button>
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="editions">Edities</button>
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="sports">Sporten & Onderdelen</button>
+      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="events">Events</button>
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="schedule">Schema</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="mp">MP-regels</button>
-      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="sim">Simulatie</button>
+      <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="mp">MP & Bonussen</button>
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="messages">Berichten</button>
       <button class="tab px-3 py-2 rounded-lg bg-white border" data-tab="tools">Tools</button>
     </div>
@@ -87,6 +87,17 @@
           <button id="athFilterBtn" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Filter</button>
         </div>
       </div>
+
+      <!-- Starter generator -->
+      <form id="starterGenForm" class="flex flex-wrap gap-2 mb-4">
+        <input id="genUserId" class="border rounded px-3 py-2 text-sm w-64" placeholder="User ID (manager)" required>
+        <input id="genCountry" class="border rounded px-3 py-2 text-sm w-44" placeholder="Land (zoals name_sets.country)" required>
+        <input id="genCount" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="# Atleten" required>
+        <input id="genSport" class="border rounded px-3 py-2 text-sm w-44" placeholder="Sport" required>
+        <input id="genDisc" class="border rounded px-3 py-2 text-sm w-44" placeholder="Discipline (optioneel)">
+        <button class="px-3 py-2 rounded bg-slate-900 text-white text-sm">Genereer starters</button>
+      </form>
+
       <form id="athleteForm" class="flex flex-wrap gap-2 mb-4">
         <input id="athUserId" class="border rounded-lg px-3 py-2 text-sm" placeholder="User ID (auth)" required />
         <input id="athName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Naam" required />
@@ -94,6 +105,7 @@
         <input id="athDisc" class="border rounded-lg px-3 py-2 text-sm" placeholder="Discipline" required />
         <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
       </form>
+
       <div class="overflow-x-auto">
         <table class="w-full text-sm border rounded-lg overflow-hidden">
           <thead class="bg-slate-100">
@@ -134,7 +146,7 @@
       </table>
     </section>
 
-    <!-- Sporten & Onderdelen -->
+    <!-- Sporten & Disciplines -->
     <section id="tab-sports" class="bg-white rounded-2xl shadow p-6 hidden">
       <div class="grid md:grid-cols-2 gap-6">
         <div>
@@ -146,7 +158,7 @@
           <ul id="sportsList" class="text-sm space-y-1"></ul>
         </div>
         <div>
-          <h3 class="font-semibold mb-2">Onderdelen (disciplines)</h3>
+          <h3 class="font-semibold mb-2">Disciplines</h3>
           <form id="discForm" class="flex flex-wrap gap-2 mb-3">
             <select id="discSport" class="border rounded-lg px-3 py-2 text-sm"></select>
             <input id="discName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Disciplinenaam (optioneel)" />
@@ -155,41 +167,60 @@
           <ul id="discList" class="text-sm space-y-1"></ul>
         </div>
       </div>
+    </section>
 
-      <hr class="my-6">
+    <!-- Events (onderdelen) -->
+    <section id="tab-events" class="bg-white rounded-2xl shadow p-6 hidden">
+      <h3 class="font-semibold mb-2">Event (Onderdeel) koppelen aan editie</h3>
+      <form id="eventForm" class="flex flex-wrap gap-2 items-end">
+        <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
 
-      <div>
-        <h3 class="font-semibold mb-2">Event (Onderdeel) koppelen aan editie</h3>
-        <form id="eventForm" class="flex flex-wrap gap-2 items-end">
-          <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
+        <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
+        <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
+          <option value="">(geen discipline)</option>
+        </select>
 
-          <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-          <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
-            <option value="">(geen discipline)</option>
-          </select>
+        <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m)" />
+        <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
+          <option value="M">Mannen</option>
+          <option value="V">Vrouwen</option>
+          <option value="X">Gemengd</option>
+        </select>
+        <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
+        <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
 
-          <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m)" />
-          <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
-            <option value="M">Mannen</option>
-            <option value="V">Vrouwen</option>
-            <option value="X">Gemengd</option>
-          </select>
-          <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
-          <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
+        <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
+        <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
+        <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
+        <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
 
-          <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
-          <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
-          <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
-          <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
+        <!-- NIEUW: min/max atleten & landen, format, groepsgrootte, doorstroom, etc. -->
+        <input id="evMinAth" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="Min atleten">
+        <input id="evMaxAth" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="Max atleten">
+        <input id="evMinCty" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="Min landen">
+        <input id="evMaxCty" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="Max landen">
 
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-        </form>
+        <select id="evFormat" class="border rounded px-3 py-2 text-sm">
+          <option value="heats_final">Heats/Finale</option>
+          <option value="groups">Groepsfase</option>
+          <option value="knockout">Knock-out</option>
+          <option value="both">Groepen + Knock-out</option>
+          <option value="round_robin">Round Robin</option>
+          <option value="time_trial">Tijdrit</option>
+        </select>
 
-        <div class="mt-4">
-          <h4 class="font-semibold mb-2">Events (per editie)</h4>
-          <select id="evListEdition" class="border rounded-lg px-3 py-2 text-sm mb-3"></select>
-          <ul id="eventsList" class="text-sm space-y-1"></ul>
-        </div>
+        <input id="evGroupSize" type="number" class="border rounded px-3 py-2 text-sm w-28" placeholder="Groepsgrootte">
+        <input id="evAdvance" class="border rounded px-3 py-2 text-sm" placeholder='Doorstroom JSON bv. {"advance_per_group":2,"best_thirds":2}'>
+        <input id="evConcurrent" type="number" class="border rounded px-3 py-2 text-sm w-36" placeholder="Tegelijk strijden">
+        <input id="evExpected" type="number" class="border rounded px-3 py-2 text-sm w-36" placeholder="# Starters (verwacht)">
+
+        <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
+      </form>
+
+      <div class="mt-4">
+        <h4 class="font-semibold mb-2">Events (per editie)</h4>
+        <select id="evListEdition" class="border rounded-lg px-3 py-2 text-sm mb-3"></select>
+        <ul id="eventsList" class="text-sm space-y-1"></ul>
       </div>
     </section>
 
@@ -206,7 +237,7 @@
       </table>
     </section>
 
-    <!-- MP-regels -->
+    <!-- MP & Bonussen -->
     <section id="tab-mp" class="bg-white rounded-2xl shadow p-6 hidden">
       <div class="flex flex-wrap items-center gap-2 mb-4">
         <h2 class="text-lg font-semibold">MP-regels</h2>
@@ -217,26 +248,28 @@
         <input id="mpValue" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="MP" required />
         <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Opslaan</button>
       </form>
-      <table class="w-full text-sm border rounded-lg overflow-hidden">
+      <table class="w-full text-sm border rounded-lg overflow-hidden mb-8">
         <thead class="bg-slate-100"><tr><th class="p-2 text-left">Plaats</th><th class="p-2 text-left">MP</th></tr></thead>
         <tbody id="mpBody"></tbody>
       </table>
-    </section>
 
-    <!-- Simulatie -->
-    <section id="tab-sim" class="bg-white rounded-2xl shadow p-6 hidden">
-      <div class="flex flex-wrap items-center gap-2">
-        <h2 class="text-lg font-semibold">Simulatie</h2>
-        <select id="simEdition" class="ml-auto border rounded-lg px-3 py-2 text-sm"></select>
-        <select id="simStatus" class="border rounded-lg px-3 py-2 text-sm">
-          <option value="idle">idle</option>
-          <option value="running">running</option>
-          <option value="paused">paused</option>
-        </select>
-        <input id="simDay" type="date" class="border rounded-lg px-3 py-2 text-sm" />
-        <button id="btnSetSim" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Opslaan</button>
-      </div>
-      <div id="simInfo" class="mt-4 text-sm text-slate-600"></div>
+      <h3 class="font-semibold mb-2">MP-bonussen</h3>
+      <form id="bonusRuleForm" class="flex flex-wrap gap-2 mb-2">
+        <input id="bonusKey" class="border rounded px-3 py-2 text-sm" placeholder="Key (bv first_win)" required>
+        <input id="bonusTitle" class="border rounded px-3 py-2 text-sm" placeholder="Titel" required>
+        <input id="bonusMP" type="number" class="border rounded px-3 py-2 text-sm w-24" placeholder="MP" required>
+        <label class="flex items-center gap-2 text-sm">
+          <input id="bonusOnce" type="checkbox" checked> 1× per user
+        </label>
+        <button class="px-3 py-2 rounded bg-blue-600 text-white text-sm">Opslaan</button>
+      </form>
+      <ul id="bonusRulesList" class="text-sm space-y-1 mb-4"></ul>
+
+      <form id="bonusGiveForm" class="flex flex-wrap gap-2">
+        <input id="bonusUser" class="border rounded px-3 py-2 text-sm w-64" placeholder="User ID" required>
+        <input id="bonusKeyGrant" class="border rounded px-3 py-2 text-sm w-64" placeholder="Bonus key" required>
+        <button class="px-3 py-2 rounded bg-slate-900 text-white text-sm">Geef bonus</button>
+      </form>
     </section>
 
     <!-- Berichten -->
@@ -284,9 +317,9 @@
       athletes: document.getElementById('tab-athletes'),
       editions: document.getElementById('tab-editions'),
       sports: document.getElementById('tab-sports'),
+      events: document.getElementById('tab-events'),
       schedule: document.getElementById('tab-schedule'),
       mp: document.getElementById('tab-mp'),
-      sim: document.getElementById('tab-sim'),
       messages: document.getElementById('tab-messages'),
       tools: document.getElementById('tab-tools'),
     };
@@ -489,6 +522,19 @@
     document.getElementById('athFilterBtn').addEventListener('click', () => {
       loadAthletes(document.getElementById('athFilterUser').value.trim());
     });
+    document.getElementById('starterGenForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p = {
+        p_user_id: document.getElementById('genUserId').value.trim(),
+        p_country: document.getElementById('genCountry').value.trim(),
+        p_count: parseInt(document.getElementById('genCount').value,10),
+        p_sport: document.getElementById('genSport').value.trim(),
+        p_discipline: document.getElementById('genDisc').value.trim() || null
+      };
+      const { error } = await supabase.rpc('admin_generate_starters', p);
+      if (error) { alert(error.message); return; }
+      await loadAthletes(p.p_user_id);
+    });
 
     /* ===== Edities ===== */
     async function loadEditionsInto(selects) {
@@ -509,8 +555,7 @@
         document.getElementById('evEdition'),
         document.getElementById('evListEdition'),
         document.getElementById('schEdition'),
-        document.getElementById('mpEdition'),
-        document.getElementById('simEdition')
+        document.getElementById('mpEdition')
       ]);
       const tbody = document.getElementById('editionsBody'); tbody.innerHTML='';
       (eds ?? []).forEach(ed => {
@@ -521,7 +566,20 @@
                         <td class="p-2">${ed.host_country ?? '-'}</td>
                         <td class="p-2">${ed.start_date ?? '-'}</td>
                         <td class="p-2">${ed.end_date ?? '-'}</td>
-                        <td class="p-2 text-right"><button class="px-2 py-1 text-xs border rounded del">Verwijder</button></td>`;
+                        <td class="p-2 text-right">
+                          <button class="px-2 py-1 text-xs border rounded edit">Bewerken</button>
+                          <button class="px-2 py-1 text-xs border rounded del">Verwijder</button>
+                        </td>`;
+        tr.querySelector('.edit').addEventListener('click', async () => {
+          const start = prompt('Startdatum (YYYY-MM-DD of leeg)', ed.start_date ?? '') || null;
+          const end   = prompt('Einddatum (YYYY-MM-DD of leeg)', ed.end_date ?? '') || null;
+          const city  = prompt('Gaststad (of leeg)', ed.host_city ?? '') || null;
+          const country = prompt('Gastland (of leeg)', ed.host_country ?? '') || null;
+          await supabase.from('editions').update({
+            start_date: start, end_date: end, host_city: city, host_country: country
+          }).eq('id', ed.id);
+          loadEditionsTable();
+        });
         tr.querySelector('.del').addEventListener('click', async () => {
           await supabase.from('editions').delete().eq('id', ed.id); loadEditionsTable();
         });
@@ -550,7 +608,7 @@
       await loadEditionsTable();
     });
 
-    /* ===== Sporten & Onderdelen ===== */
+    /* ===== Sporten & Disciplines ===== */
     async function loadSports() {
       const { data } = await supabase.from('sports').select('*').order('name');
       const ul = document.getElementById('sportsList'); ul.innerHTML='';
@@ -576,7 +634,7 @@
       return data ?? [];
     }
 
-    // Gemengd velden tonen/verbergen
+    /* ===== Events ===== */
     const evGender = document.getElementById('evGender');
     const evMixedMen = document.getElementById('evMixedMen');
     const evMixedWomen = document.getElementById('evMixedWomen');
@@ -586,30 +644,6 @@
       evMixedWomen.classList.toggle('hidden', !mixed);
     });
 
-    // Sport toevoegen
-    document.getElementById('sportForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('sportName').value.trim();
-      if (!name) return;
-      await supabase.from('sports').insert([{ name }]);
-      document.getElementById('sportName').value='';
-      await loadSports();
-    });
-
-    // Discipline toevoegen (optioneel naam)
-    document.getElementById('discForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const sport_id = parseInt(document.getElementById('discSport').value,10);
-      const name = document.getElementById('discName').value.trim();
-      if (!sport_id) return;
-      if (name) {
-        await supabase.from('disciplines').insert([{ sport_id, name }]);
-        document.getElementById('discName').value='';
-      }
-      await loadDisciplines();
-    });
-
-    // Event aanmaken via admin_create_event2
     document.getElementById('eventForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const edition_id = document.getElementById('evEdition').value;
@@ -627,7 +661,8 @@
       const mixed_male_count = gender==='X' ? parseInt(evMixedMen.value || '0',10) : null;
       const mixed_female_count = gender==='X' ? parseInt(evMixedWomen.value || '0',10) : null;
 
-      const { error } = await supabase.rpc('admin_create_event2', {
+      // Maak event + krijg ID
+      const { data: newEventId, error } = await supabase.rpc('admin_create_event2', {
         p_edition_id: edition_id,
         p_sport_id: sport_id,
         p_discipline_id: discipline_id,
@@ -643,8 +678,26 @@
       });
       if (error) { alert(error.message); return; }
 
+      // Update extra velden op events
+      await supabase.from('events').update({
+        min_athletes: parseInt(document.getElementById('evMinAth').value || '0',10) || null,
+        max_athletes: parseInt(document.getElementById('evMaxAth').value || '0',10) || null,
+        min_countries: parseInt(document.getElementById('evMinCty').value || '0',10) || null,
+        max_countries: parseInt(document.getElementById('evMaxCty').value || '0',10) || null,
+        tournament_format: document.getElementById('evFormat').value || null,
+        group_size: parseInt(document.getElementById('evGroupSize').value || '0',10) || null,
+        advance_rules: (()=>{
+          let j = document.getElementById('evAdvance').value.trim();
+          if(!j) return null;
+          try { return JSON.parse(j); } catch { return null; }
+        })(),
+        concurrent_competitors: parseInt(document.getElementById('evConcurrent').value || '0',10) || null,
+        expected_starters: parseInt(document.getElementById('evExpected').value || '0',10) || null
+      }).eq('id', newEventId);
+
       document.getElementById('evOnderdeel').value='';
       document.getElementById('evRounds').value='';
+      ['evMinAth','evMaxAth','evMinCty','evMaxCty','evGroupSize','evAdvance','evConcurrent','evExpected'].forEach(id => document.getElementById(id).value='');
       evMixedMen.value=''; evMixedWomen.value='';
       await loadEventsList();
     });
@@ -654,7 +707,7 @@
       if (!ed) return;
       const { data } = await supabase
         .from('events')
-        .select('id, is_team, min_countries, max_athletes_per_country, rounds, gender, sub_name, mixed_male_count, mixed_female_count, disciplines(name, sports(name))')
+        .select('id, is_team, min_countries, max_athletes_per_country, rounds, gender, sub_name, mixed_male_count, mixed_female_count, min_athletes, max_athletes, max_countries, tournament_format, group_size, advance_rules, concurrent_competitors, expected_starters, disciplines(name, sports(name))')
         .eq('edition_id', ed)
         .order('created_at');
       const ul = document.getElementById('eventsList'); ul.innerHTML='';
@@ -662,8 +715,11 @@
         const li = document.createElement('li');
         li.textContent =
           `${ev.disciplines?.sports?.name ?? '(sport)'} — ${ev.disciplines?.name ?? '(geen discipline)'} ${ev.is_team?'(team)':''} | ` +
-          `gender: ${ev.gender} ${ev.sub_name ? '| onderdeel: '+ev.sub_name : ''} | rondes: ${JSON.stringify(ev.rounds)} ` +
-          `${ev.gender==='X' ? '| gemengd: ' + (ev.mixed_male_count??0) + 'M/' + (ev.mixed_female_count??0) + 'V' : ''}`;
+          `gender: ${ev.gender}${ev.sub_name ? ' | onderdeel: '+ev.sub_name : ''} | rondes: ${JSON.stringify(ev.rounds)} ` +
+          `${ev.gender==='X' ? ' | gemengd: ' + (ev.mixed_male_count??0) + 'M/' + (ev.mixed_female_count??0) + 'V' : ''} | ` +
+          `min/max atleten: ${(ev.min_athletes??'-')}/${(ev.max_athletes??'-')} | min/max landen: ${(ev.min_countries??'-')}/${(ev.max_countries??'-')} | ` +
+          `format: ${ev.tournament_format ?? '-'}${ev.group_size? ' (groep '+ev.group_size+')':''}${ev.advance_rules? ' ' + JSON.stringify(ev.advance_rules):''} | ` +
+          `tegelijk: ${ev.concurrent_competitors ?? '-'} | verwacht: ${ev.expected_starters ?? '-'}`;
         ul.appendChild(li);
       });
     }
@@ -697,7 +753,7 @@
     });
     document.getElementById('schEdition').addEventListener('change', loadSchedule);
 
-    /* ===== MP-regels ===== */
+    /* ===== MP & Bonussen ===== */
     async function loadMpRules() {
       const ed = document.getElementById('mpEdition').value;
       if (!ed) return;
@@ -721,24 +777,37 @@
     });
     document.getElementById('mpEdition').addEventListener('change', loadMpRules);
 
-    /* ===== Simulatie ===== */
-    async function loadSimInfo() {
-      const ed = document.getElementById('simEdition').value;
-      if (!ed) return;
-      const { data } = await supabase.from('simulation_state').select('*').eq('edition_id', ed).single();
-      document.getElementById('simInfo').textContent = data ? `Status: ${data.status}, Dag: ${data.current_day ?? '-'}` : 'Geen status.';
+    // Bonusregels
+    async function loadBonusRules(){
+      const { data } = await supabase.from('mp_bonus_rules').select('*').order('id');
+      const ul = document.getElementById('bonusRulesList'); ul.innerHTML='';
+      (data??[]).forEach(r=>{
+        const li = document.createElement('li');
+        li.textContent = `${r.key} — ${r.title} (+${r.mp} MP) ${r.once_per_user?'[1×]':''}`;
+        ul.appendChild(li);
+      });
     }
-    document.getElementById('btnSetSim').addEventListener('click', async () => {
-      const ed = document.getElementById('simEdition').value;
-      const status = document.getElementById('simStatus').value;
-      const day = document.getElementById('simDay').value || null;
-      const { error } = await supabase.rpc('admin_set_sim_state', { p_edition_id: ed, p_status: status, p_current_day: day });
-      if (error) alert(error.message);
-      loadSimInfo();
+    document.getElementById('bonusRuleForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const key = document.getElementById('bonusKey').value.trim();
+      const title = document.getElementById('bonusTitle').value.trim();
+      const mp = parseInt(document.getElementById('bonusMP').value,10);
+      const once = document.getElementById('bonusOnce').checked;
+      const { error } = await supabase.from('mp_bonus_rules').insert([{ key, title, mp, once_per_user: once }]);
+      if (error) { alert(error.message); return; }
+      document.getElementById('bonusKey').value=''; document.getElementById('bonusTitle').value=''; document.getElementById('bonusMP').value='';
+      loadBonusRules();
     });
-    document.getElementById('simEdition').addEventListener('change', loadSimInfo);
+    document.getElementById('bonusGiveForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const user = document.getElementById('bonusUser').value.trim();
+      const key  = document.getElementById('bonusKeyGrant').value.trim();
+      const { error } = await supabase.rpc('admin_award_bonus', { p_rule_key: key, p_user_id: user });
+      if (error) { alert(error.message); return; }
+      alert('Bonus toegekend (of al toegekend als 1× regel).');
+    });
 
-    /* ===== Berichten ===== */
+    /* ===== Messages ===== */
     async function loadMessages() {
       const { data } = await supabase.from('system_messages').select('*').order('created_at', { ascending: false });
       const ul = document.getElementById('msgList'); ul.innerHTML='';
@@ -795,14 +864,13 @@
     await loadEventsList();
     await loadSchedule();
     await loadMpRules();
-    await loadSimInfo();
+    await loadBonusRules();
     await loadMessages();
 
     // koppel selects (trigger eerste render)
     document.getElementById('evListEdition').dispatchEvent(new Event('change'));
     document.getElementById('schEdition').dispatchEvent(new Event('change'));
     document.getElementById('mpEdition').dispatchEvent(new Event('change'));
-    document.getElementById('simEdition').dispatchEvent(new Event('change'));
   </script>
 </body>
 </html>
