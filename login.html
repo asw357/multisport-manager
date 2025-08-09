@@ -2,20 +2,29 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Inloggen</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inloggen — Multisport-Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Inloggen</h2>
-  <form id="login-form">
-    <input type="email" id="email" placeholder="E-mailadres" required><br>
-    <input type="password" id="password" placeholder="Wachtwoord" required><br>
-    <button type="submit">Login</button>
-  </form>
-  <p id="message"></p>
+<body class="bg-slate-50">
+  <main class="max-w-md mx-auto px-4 py-10">
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h1 class="text-xl font-bold mb-1">Inloggen</h1>
+      <p class="text-sm text-slate-600 mb-6">Gebruik je e-mailadres en wachtwoord.</p>
+
+      <form id="login-form" class="space-y-3">
+        <input id="email" type="email" class="w-full border rounded-lg px-3 py-2" placeholder="E-mailadres" required />
+        <input id="password" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="Wachtwoord" required />
+        <button class="w-full bg-slate-900 text-white rounded-lg py-2">Inloggen</button>
+      </form>
+
+      <p id="message" class="text-sm mt-4"></p>
+      <div class="mt-4 text-sm"><a class="text-blue-600 hover:underline" href="signup.html">Nog geen account? Inschrijven</a></div>
+    </div>
+  </main>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
     const supabase = createClient(
       'https://yqbejgnhmizkeuxxpbbb.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
@@ -23,9 +32,8 @@
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
 
       const { data, error } = await supabase
         .from('users')
