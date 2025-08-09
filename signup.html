@@ -2,90 +2,82 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Inschrijven</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inschrijven — Multisport-Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Inschrijven</h2>
-  <form id="signup-form">
-    <input type="text" placeholder="Managernaam" id="manager_name" required><br>
-    <input type="email" placeholder="E-mailadres" id="email" required><br>
-    <input type="password" placeholder="Wachtwoord" id="password" required><br>
-    <button type="submit">Account aanmaken</button>
-  </form>
-  <p id="message"></p>
+<body class="bg-slate-50">
+  <main class="max-w-md mx-auto px-4 py-10">
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h1 class="text-xl font-bold mb-1">Account aanmaken</h1>
+      <p class="text-sm text-slate-600 mb-6">Je krijgt automatisch een vrij land, 100 MP en startatleten.</p>
+
+      <form id="signup-form" class="space-y-3">
+        <input id="manager_name" class="w-full border rounded-lg px-3 py-2" placeholder="Managernaam" required />
+        <input id="email" type="email" class="w-full border rounded-lg px-3 py-2" placeholder="E-mailadres" required />
+        <input id="password" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="Wachtwoord" required />
+        <button class="w-full bg-blue-600 text-white rounded-lg py-2">Account aanmaken</button>
+      </form>
+
+      <p id="message" class="text-sm mt-4"></p>
+      <div class="mt-4 text-sm"><a class="text-blue-600 hover:underline" href="login.html">Al een account? Inloggen</a></div>
+    </div>
+  </main>
 
   <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
 
-const supabase = createClient(
-  'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-);
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const manager_name = document.getElementById('manager_name').value.trim();
 
-document.getElementById('signup-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+      // pak vrij land
+      const { data: freeCountries, error: countryError } = await supabase
+        .from('countries').select('*').eq('is_taken', false).order('id', { ascending: true }).limit(1);
 
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const manager_name = document.getElementById('manager_name').value;
+      if (countryError || !freeCountries?.length) {
+        document.getElementById('message').textContent = 'Geen landen meer beschikbaar.';
+        return;
+      }
+      const assignedCountry = freeCountries[0];
 
-  // Zoek een vrij land
-  const { data: freeCountries, error: countryError } = await supabase
-    .from('countries')
-    .select('*')
-    .eq('is_taken', false)
-    .limit(1);
+      // maak user
+      const { data: newUser, error: userError } = await supabase
+        .from('users')
+        .insert([{ email, password, manager_name, country: assignedCountry.name, mp: 100 }])
+        .select()
+        .single();
 
-  if (countryError || freeCountries.length === 0) {
-    document.getElementById('message').textContent = 'Geen landen meer beschikbaar!';
-    return;
-  }
+      if (userError) {
+        document.getElementById('message').textContent = userError.message;
+        return;
+      }
 
-  const assignedCountry = freeCountries[0];
+      // markeer land
+      await supabase.from('countries').update({ is_taken: true }).eq('id', assignedCountry.id);
 
-  // Voeg gebruiker toe
-  const { data: newUser, error: userError } = await supabase
-    .from('users')
-    .insert([{
-      email,
-      password,
-      manager_name,
-      country: assignedCountry.name,
-      mp: 100
-    }])
-    .select()
-    .single();
+      // startatleten
+      const startingAthletes = [
+        { name: 'Atleet 1', sport: 'Zwemmen', discipline: '100m Vrije slag' },
+        { name: 'Atleet 2', sport: 'Turnen', discipline: 'Vloer' },
+        { name: 'Atleet 3', sport: 'Atletiek', discipline: '200m' }
+      ];
+      for (const a of startingAthletes) {
+        await supabase.from('athletes').insert([{
+          user_id: newUser.id, name: a.name, sport: a.sport, discipline: a.discipline,
+          stats: { snelheid: Math.round(Math.random()*10), kracht: Math.round(Math.random()*10) }
+        }]);
+      }
 
-  if (userError) {
-    document.getElementById('message').textContent = userError.message;
-    return;
-  }
-
-  // Markeer land als gebruikt
-  await supabase
-    .from('countries')
-    .update({ is_taken: true })
-    .eq('id', assignedCountry.id);
-
-  // Voeg startatleten toe (voorbeeld: 3 random sporten)
-  const startingAthletes = [
-    { name: 'Atleet 1', sport: 'Zwemmen', discipline: '100m Vrije slag' },
-    { name: 'Atleet 2', sport: 'Turnen', discipline: 'Vloer' },
-    { name: 'Atleet 3', sport: 'Atletiek', discipline: '200m' }
-  ];
-
-  for (const athlete of startingAthletes) {
-    await supabase.from('athletes').insert([{
-      user_id: newUser.id,
-      name: athlete.name,
-      sport: athlete.sport,
-      discipline: athlete.discipline,
-      stats: JSON.stringify({ snelheid: Math.random() * 10, kracht: Math.random() * 10 })
-    }]);
-  }
-
-  document.getElementById('message').textContent = `Account aangemaakt! Je land is ${assignedCountry.name}. Je kunt nu inloggen.`;
-});
-</script>
+      document.getElementById('message').innerHTML =
+        `✅ Account aangemaakt! Je land is <b>${assignedCountry.name}</b>. <a class="text-blue-600 underline" href="login.html">Nu inloggen</a>.`;
+    });
+  </script>
 </body>
 </html>
