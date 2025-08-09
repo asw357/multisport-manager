@@ -1,63 +1,78 @@
-<!doctype html><html lang="nl"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Manager</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head><body class="bg-slate-50">
-<header class="bg-white border-b">
-  <div class="max-w-5xl mx-auto p-4 flex justify-between">
-    <div class="font-bold">Manager</div>
-    <nav class="flex gap-2">
-      <a href="index.html" class="underline">Home</a>
-      <a href="admin.html" class="underline">Admin</a>
-      <a href="logout.html" class="underline">Uitloggen</a>
-    </nav>
-  </div>
-</header>
-<main class="max-w-5xl mx-auto p-4 space-y-6">
-  <section class="bg-white p-4 rounded shadow">
-    <h2 class="font-semibold mb-2">Profiel</h2>
-    <div id="me" class="text-sm text-slate-600">Laden…</div>
-    <form id="profForm" class="mt-3 flex flex-wrap gap-2">
-      <input id="managerName" class="border rounded p-2" placeholder="Managernaam">
-      <input id="country" class="border rounded p-2" placeholder="Land">
-      <button class="px-3 py-2 rounded bg-blue-600 text-white text-sm">Opslaan</button>
-    </form>
-  </section>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+  <header class="bg-white border-b">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Manager</h1>
+      <nav class="flex gap-3 text-sm">
+        <a class="hover:underline" href="index.html">Home</a>
+        <a class="hover:underline" href="standings.html">Klassement</a>
+        <a class="hover:underline" href="admin.html" id="adminLink" style="display:none;">Admin</a>
+        <a class="px-3 py-1 rounded bg-slate-900 text-white" href="logout.html">Uitloggen</a>
+      </nav>
+    </div>
+  </header>
 
-  <section class="bg-white p-4 rounded shadow">
-    <h2 class="font-semibold mb-2">Mijn atleten</h2>
-    <ul id="myAthletes" class="text-sm space-y-1"></ul>
-  </section>
-</main>
-<script type="module">
-import { getClient } from './config.js';
-const supabase = await getClient();
-const { data: s } = await supabase.auth.getSession();
-if (!s?.session) { location.href='login.html'; }
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-lg font-semibold mb-3">Profiel</h2>
+      <form id="profileForm" class="grid md:grid-cols-2 gap-3">
+        <input id="pfName" class="border rounded px-3 py-2" placeholder="Managernaam" />
+        <input id="pfCountry" class="border rounded px-3 py-2" placeholder="Land" />
+        <button class="md:col-span-2 bg-blue-600 text-white rounded py-2">Opslaan</button>
+      </form>
+      <div id="pfInfo" class="text-sm text-slate-600 mt-3"></div>
+    </section>
 
-const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', s.session.user.id).single();
-document.getElementById('me').textContent = `${prof.email} — MP: ${prof.mp} ${prof.is_admin?'(admin)':''}`;
-managerName.value = prof.manager_name ?? ''; country.value = prof.country ?? '';
+    <section class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-lg font-semibold mb-3">Mijn atleten</h2>
+      <ul id="athList" class="text-sm space-y-1"></ul>
+    </section>
+  </main>
 
-profForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  await supabase.from('profiles').update({
-    manager_name: managerName.value.trim(),
-    country: country.value.trim()
-  }).eq('user_id', s.session.user.id);
-  location.reload();
-});
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
 
-async function loadMine(){
-  const { data } = await supabase.from('athletes').select('*').eq('user_id', s.session.user.id).order('created_at',{ascending:false});
-  const ul = document.getElementById('myAthletes'); ul.innerHTML='';
-  (data??[]).forEach(a=>{
-    const li = document.createElement('li');
-    li.textContent = `${a.name} — ${a.sport} (${a.discipline})`;
-    ul.appendChild(li);
-  });
-}
-loadMine();
-</script>
-</body></html>
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session) { location.href = 'login.html'; }
+    const uid = session.session.user.id;
 
+    const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', uid).single();
+    if (prof?.is_admin) document.getElementById('adminLink').style.display='inline';
+
+    pfName.value = prof?.manager_name ?? '';
+    pfCountry.value = prof?.country ?? '';
+    document.getElementById('pfInfo').textContent = `E-mail: ${prof?.email ?? session.session.user.email} — MP: ${prof?.mp ?? 0}`;
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const manager_name = pfName.value.trim();
+      const country = pfCountry.value.trim();
+      await supabase.from('profiles').update({ manager_name, country }).eq('user_id', uid);
+      const { data: p2 } = await supabase.from('profiles').select('*').eq('user_id', uid).single();
+      document.getElementById('pfInfo').textContent = `E-mail: ${p2?.email} — MP: ${p2?.mp ?? 0}`;
+    });
+
+    async function loadMine() {
+      const { data } = await supabase.from('athletes').select('*').eq('user_id', uid).order('created_at');
+      const ul = document.getElementById('athList'); ul.innerHTML='';
+      (data??[]).forEach(a=>{
+        const li = document.createElement('li');
+        li.textContent = `${a.name} — ${a.sport}${a.discipline?', '+a.discipline:''}`;
+        ul.appendChild(li);
+      });
+    }
+    await loadMine();
+  </script>
+</body>
+</html>
