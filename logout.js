@@ -1,21 +1,12 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <title>Uitloggen...</title>
-</head>
-<body>
-  <p>Je wordt uitgelogd...</p>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(
-      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-    );
-
-    await supabase.auth.signOut();
-    localStorage.removeItem('user');
-    location.href = 'index.html';
-  </script>
-</body>
-</html>
+<!doctype html><html lang="nl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Uitloggen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-slate-50">
+<main class="max-w-md mx-auto p-6"><h1 class="text-xl font-bold mb-4">Uitloggen…</h1></main>
+<script type="module">
+import { getClient } from './config.js';
+const supabase = await getClient();
+await supabase.auth.signOut();
+location.href = 'index.html';
+</script></body></html>
