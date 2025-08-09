@@ -18,34 +18,46 @@
     <p class="mt-4 text-center"><a href="login.html" class="text-blue-600 underline">Al een account? Inloggen</a></p>
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(
-      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-    );
+ <script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+const supabase = createClient(
+  'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+);
 
-    document.getElementById('signup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const manager_name = document.getElementById('manager_name').value.trim();
+const form = document.getElementById('signup-form');
+const msg  = document.getElementById('message');
 
-      const { error: signErr } = await supabase.auth.signUp({ email, password });
-      if (signErr) {
-        document.getElementById('message').textContent = signErr.message;
-        return;
-      }
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = '';
 
-      const { data: initData, error: initErr } = await supabase.rpc('init_new_manager', { p_manager_name: manager_name });
-      if (initErr) {
-        document.getElementById('message').textContent = initErr.message;
-        return;
-      }
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const manager_name = document.getElementById('manager_name').value.trim();
 
-      document.getElementById('message').innerHTML =
-        `✅ Account aangemaakt! Je land is <b>${initData?.country ?? '-'}</b>. <a class="text-blue-600 underline" href="login.html">Nu inloggen</a>.`;
-    });
-  </script>
+  // 1) Sign up
+  const { error: signErr } = await supabase.auth.signUp({ email, password });
+  if (signErr) { msg.textContent = signErr.message; return; }
+
+  // 2) Zorg voor sessie: direct inloggen
+  const { data: login, error: loginErr } =
+    await supabase.auth.signInWithPassword({ email, password });
+  if (loginErr) {
+    // Als e-mailbevestiging AAN staat, is dit normaal.
+    msg.innerHTML = 'Check je e-mail om te bevestigen en log daarna in.';
+    return;
+  }
+
+  // 3) Nu we authenticated zijn: RPC draaien
+  const { data: init, error: initErr } =
+    await supabase.rpc('init_new_manager', { p_manager_name: manager_name });
+
+  if (initErr) { msg.textContent = initErr.message; return; }
+
+  msg.innerHTML = `✅ Account aangemaakt! Je land is <b>${init?.country ?? '-'}</b>. <a class="text-blue-600 underline" href="manager.html">Verder</a>.`;
+});
+</script>
+
 </body>
 </html>
