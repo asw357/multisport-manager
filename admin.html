@@ -36,10 +36,18 @@
     <section id="tab-admins" class="bg-white rounded-2xl shadow p-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">Admin allowlist</h2>
-        <form id="allowForm" class="flex flex-wrap gap-2">
-          <input id="allowEmail" type="email" class="border rounded-lg px-3 py-2 text-sm" placeholder="e-mail toevoegen..." required />
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
-        </form>
+      <form id="editionForm" class="ml-auto grid grid-cols-1 md:grid-cols-5 gap-2">
+  <select id="edSeason" class="border rounded-lg px-3 py-2 text-sm" required>
+    <option value="zomer">Zomer</option>
+    <option value="winter">Winter</option>
+  </select>
+  <input id="edCity" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gaststad" />
+  <input id="edCountry" class="border rounded-lg px-3 py-2 text-sm" placeholder="Gastland" />
+  <input id="edStart" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Start (optioneel)" />
+  <input id="edEnd" type="date" class="border rounded-lg px-3 py-2 text-sm" placeholder="Eind (optioneel)" />
+  <button class="md:col-span-5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
+</form>
+
       </div>
       <table class="w-full text-sm border rounded-lg overflow-hidden">
         <thead class="bg-slate-100"><tr><th class="p-2 text-left">E-mail</th><th class="p-2 text-right">Acties</th></tr></thead>
