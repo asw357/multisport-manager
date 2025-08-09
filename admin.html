@@ -2,19 +2,248 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Pagina</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Multisport-Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Admin Dashboard</h2>
-  <p>Alleen toegankelijk voor admin</p>
-  <p><a href="index.html">Terug</a></p>
+<body class="bg-slate-50">
+  <header class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Admin Dashboard</h1>
+      <nav class="flex items-center gap-3">
+        <a class="text-sm hover:underline" href="index.html">Home</a>
+        <a class="text-sm hover:underline" href="manager.html">Manager</a>
+      </nav>
+    </div>
+  </header>
 
-  <script>
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || user.email !== 'wilcoboesveld12@hotmail.com') {
-      alert('Geen toegang.');
-      window.location.href = 'index.html';
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <!-- Tabs -->
+    <div class="flex gap-2">
+      <button class="tab px-4 py-2 rounded-lg bg-slate-900 text-white" data-tab="countries">Landen</button>
+      <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="users">Users</button>
+      <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="athletes">Atleten</button>
+    </div>
+
+    <!-- Landen -->
+    <section id="tab-countries" class="bg-white rounded-2xl shadow p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Landen</h2>
+        <form id="countryForm" class="flex gap-2">
+          <input id="countryName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Nieuw land..." />
+          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
+        </form>
+      </div>
+      <table class="w-full text-sm border rounded-lg overflow-hidden">
+        <thead class="bg-slate-100">
+          <tr><th class="text-left p-2">ID</th><th class="text-left p-2">Naam</th><th class="text-left p-2">Bezet</th><th class="p-2">Acties</th></tr>
+        </thead>
+        <tbody id="countriesBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Users -->
+    <section id="tab-users" class="bg-white rounded-2xl shadow p-6 hidden">
+      <h2 class="text-lg font-semibold mb-4">Users</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border rounded-lg overflow-hidden">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="text-left p-2">Manager</th>
+              <th class="text-left p-2">E-mail</th>
+              <th class="text-left p-2">Land</th>
+              <th class="text-left p-2">MP</th>
+              <th class="text-left p-2">Admin</th>
+              <th class="p-2">Acties</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Atleten -->
+    <section id="tab-athletes" class="bg-white rounded-2xl shadow p-6 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Atleten</h2>
+        <form id="athleteForm" class="flex flex-wrap gap-2">
+          <input id="athUserId" class="border rounded-lg px-3 py-2 text-sm" placeholder="User ID" required />
+          <input id="athName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Naam" required />
+          <input id="athSport" class="border rounded-lg px-3 py-2 text-sm" placeholder="Sport" required />
+          <input id="athDisc" class="border rounded-lg px-3 py-2 text-sm" placeholder="Discipline" required />
+          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
+        </form>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border rounded-lg overflow-hidden">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="text-left p-2">ID</th>
+              <th class="text-left p-2">User</th>
+              <th class="text-left p-2">Naam</th>
+              <th class="text-left p-2">Sport</th>
+              <th class="text-left p-2">Discipline</th>
+              <th class="p-2">Acties</th>
+            </tr>
+          </thead>
+          <tbody id="athletesBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
+
+    // Hard guard: alleen admin
+    const me = JSON.parse(localStorage.getItem('user'));
+    if (!me || !me.is_admin) {
+      alert('Geen toegang: alleen admin.');
+      location.href = 'index.html';
     }
+
+    // Tabs
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+      countries: document.getElementById('tab-countries'),
+      users: document.getElementById('tab-users'),
+      athletes: document.getElementById('tab-athletes')
+    };
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => { b.classList.remove('bg-slate-900','text-white'); b.classList.add('bg-white','border'); });
+        btn.classList.add('bg-slate-900','text-white'); btn.classList.remove('bg-white','border');
+        Object.values(panels).forEach(p => p.classList.add('hidden'));
+        panels[btn.dataset.tab].classList.remove('hidden');
+      });
+    });
+
+    /* ===== Landen ===== */
+    async function loadCountries() {
+      const { data } = await supabase.from('countries').select('*').order('id');
+      const tbody = document.getElementById('countriesBody');
+      tbody.innerHTML = '';
+      (data ?? []).forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2">${c.id}</td>
+          <td class="p-2">${c.name}</td>
+          <td class="p-2">${c.is_taken ? 'Ja' : 'Nee'}</td>
+          <td class="p-2 text-right">
+            <button class="px-2 py-1 text-xs border rounded toggleTaken">Toggle bezet</button>
+            <button class="px-2 py-1 text-xs border rounded delete">Verwijder</button>
+          </td>`;
+        tr.querySelector('.toggleTaken').addEventListener('click', async () => {
+          await supabase.from('countries').update({ is_taken: !c.is_taken }).eq('id', c.id);
+          loadCountries();
+        });
+        tr.querySelector('.delete').addEventListener('click', async () => {
+          await supabase.from('countries').delete().eq('id', c.id);
+          loadCountries();
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('countryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('countryName').value.trim();
+      if (!name) return;
+      await supabase.from('countries').insert([{ name }]);
+      (document.getElementById('countryName')).value = '';
+      loadCountries();
+    });
+
+    /* ===== Users ===== */
+    async function loadUsers() {
+      const { data } = await supabase.from('users').select('*').order('created_at', { ascending: true });
+      const tbody = document.getElementById('usersBody');
+      tbody.innerHTML = '';
+      (data ?? []).forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2">${u.manager_name ?? '-'}</td>
+          <td class="p-2">${u.email}</td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-40 countryInp" value="${u.country ?? ''}" /></td>
+          <td class="p-2"><input type="number" class="border rounded px-2 py-1 w-24 mpInp" value="${u.mp ?? 0}" /></td>
+          <td class="p-2"><input type="checkbox" class="adminChk" ${u.is_admin ? 'checked' : ''}></td>
+          <td class="p-2 text-right">
+            <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
+            <button class="px-2 py-1 text-xs border rounded danger delUser">Verwijder</button>
+          </td>`;
+        tr.querySelector('.save').addEventListener('click', async () => {
+          const country = tr.querySelector('.countryInp').value.trim();
+          const mp = parseInt(tr.querySelector('.mpInp').value || '0', 10);
+          const is_admin = tr.querySelector('.adminChk').checked || u.email.toLowerCase() === 'wilcoboesveld12@hotmail.com';
+          await supabase.from('users').update({ country, mp, is_admin }).eq('id', u.id);
+          if (me.id === u.id) { // eigen admin-status in localStorage updaten
+            const { data: fresh } = await supabase.from('users').select('*').eq('id', u.id).single();
+            localStorage.setItem('user', JSON.stringify(fresh));
+          }
+          loadUsers();
+        });
+        tr.querySelector('.delUser').addEventListener('click', async () => {
+          if (u.email.toLowerCase() === 'wilcoboesveld12@hotmail.com') { alert('Admin kan niet verwijderd worden.'); return; }
+          await supabase.from('users').delete().eq('id', u.id);
+          loadUsers();
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ===== Atleten ===== */
+    async function loadAthletes() {
+      const { data } = await supabase.from('athletes').select('*').order('created_at', { ascending: true });
+      const tbody = document.getElementById('athletesBody');
+      tbody.innerHTML = '';
+      (data ?? []).forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2">${a.id}</td>
+          <td class="p-2">${a.user_id}</td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-40 nameInp" value="${a.name}" /></td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-36 sportInp" value="${a.sport}" /></td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-44 discInp" value="${a.discipline}" /></td>
+          <td class="p-2 text-right">
+            <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
+            <button class="px-2 py-1 text-xs border rounded danger del">Verwijder</button>
+          </td>`;
+        tr.querySelector('.save').addEventListener('click', async () => {
+          const name = tr.querySelector('.nameInp').value.trim();
+          const sport = tr.querySelector('.sportInp').value.trim();
+          const discipline = tr.querySelector('.discInp').value.trim();
+          await supabase.from('athletes').update({ name, sport, discipline }).eq('id', a.id);
+          loadAthletes();
+        });
+        tr.querySelector('.del').addEventListener('click', async () => {
+          await supabase.from('athletes').delete().eq('id', a.id);
+          loadAthletes();
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('athleteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user_id = document.getElementById('athUserId').value.trim();
+      const name = document.getElementById('athName').value.trim();
+      const sport = document.getElementById('athSport').value.trim();
+      const discipline = document.getElementById('athDisc').value.trim();
+      if (!user_id || !name || !sport || !discipline) return;
+      await supabase.from('athletes').insert([{ user_id, name, sport, discipline, stats: { snelheid: 5, kracht: 5 } }]);
+      document.getElementById('athUserId').value = '';
+      document.getElementById('athName').value = '';
+      document.getElementById('athSport').value = '';
+      document.getElementById('athDisc').value = '';
+      loadAthletes();
+    });
+
+    // initial load
+    await loadCountries();
+    await loadUsers();
+    await loadAthletes();
   </script>
 </body>
 </html>
