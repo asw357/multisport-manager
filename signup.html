@@ -1,63 +1,110 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Multisport-Manager - Registreren</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inschrijven — Multisport-Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-    <h1 class="text-2xl font-bold mb-4 text-center">Account aanmaken</h1>
-    <form id="signup-form" class="space-y-4">
-      <input id="manager_name" type="text" placeholder="Manager naam" class="w-full p-2 border rounded" required>
-      <input id="email" type="email" placeholder="E-mailadres" class="w-full p-2 border rounded" required>
-      <input id="password" type="password" placeholder="Wachtwoord" class="w-full p-2 border rounded" required>
-      <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Registreren</button>
-    </form>
-    <p id="message" class="mt-4 text-center text-sm text-gray-700"></p>
-    <p class="mt-4 text-center"><a href="login.html" class="text-blue-600 underline">Al een account? Inloggen</a></p>
-  </div>
+<body class="bg-slate-50">
+  <header class="bg-white border-b">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Multisport-Manager</h1>
+      <nav class="flex items-center gap-3 text-sm">
+        <a class="hover:underline" href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
 
- <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-const supabase = createClient(
-  'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-);
+  <main class="max-w-md mx-auto px-4 py-10">
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-xl font-semibold mb-1">Account aanmaken</h2>
+      <p class="text-sm text-slate-600 mb-6">
+        Je krijgt automatisch een vrij land, 100 MP en startatleten.
+      </p>
 
-const form = document.getElementById('signup-form');
-const msg  = document.getElementById('message');
+      <form id="signup-form" class="space-y-3">
+        <input id="manager_name" class="w-full border rounded-lg px-3 py-2" placeholder="Managernaam" required />
+        <input id="email" type="email" class="w-full border rounded-lg px-3 py-2" placeholder="E-mailadres" required />
+        <input id="password" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="Wachtwoord" required />
+        <button class="w-full bg-blue-600 text-white rounded-lg py-2">Account aanmaken</button>
+      </form>
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  msg.textContent = '';
+      <p id="message" class="text-sm mt-4"></p>
+      <div class="mt-4 text-sm">
+        <a class="text-blue-600 hover:underline" href="login.html">Al een account? Inloggen</a>
+      </div>
+    </div>
+  </main>
 
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const manager_name = document.getElementById('manager_name').value.trim();
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  // 1) Sign up
-  const { error: signErr } = await supabase.auth.signUp({ email, password });
-  if (signErr) { msg.textContent = signErr.message; return; }
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
 
-  // 2) Zorg voor sessie: direct inloggen
-  const { data: login, error: loginErr } =
-    await supabase.auth.signInWithPassword({ email, password });
-  if (loginErr) {
-    // Als e-mailbevestiging AAN staat, is dit normaal.
-    msg.innerHTML = 'Check je e-mail om te bevestigen en log daarna in.';
-    return;
-  }
+    const form = document.getElementById('signup-form');
+    const msg  = document.getElementById('message');
 
-  // 3) Nu we authenticated zijn: RPC draaien
-  const { data: init, error: initErr } =
-    await supabase.rpc('init_new_manager', { p_manager_name: manager_name });
+    async function waitForSession(retries = 10, delayMs = 300) {
+      for (let i = 0; i < retries; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session) return data.session;
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+      return null;
+    }
 
-  if (initErr) { msg.textContent = initErr.message; return; }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
 
-  msg.innerHTML = `✅ Account aangemaakt! Je land is <b>${init?.country ?? '-'}</b>. <a class="text-blue-600 underline" href="manager.html">Verder</a>.`;
-});
-</script>
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const manager_name = document.getElementById('manager_name').value.trim();
 
+      try {
+        // 1) Sign up
+        const { error: signErr } = await supabase.auth.signUp({ email, password });
+        if (signErr) { msg.textContent = `Sign-up: ${signErr.message}`; return; }
+
+        // 2) Probeer meteen in te loggen (zekerheidje voor sessie)
+        const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (loginErr) {
+          // Als e-mailbevestiging aan staat, kun je niet direct inloggen
+          msg.innerHTML = 'We hebben je een bevestigingsmail gestuurd. Bevestig je e-mailadres en log daarna in via de <a class="text-blue-600 underline" href="login.html">loginpagina</a>.';
+          return;
+        }
+
+        // 3) Wacht (kort) tot sessie er écht is
+        const session = await waitForSession();
+        if (!session) {
+          msg.textContent = 'Kon geen sessie starten. Probeer in te loggen via de loginpagina.';
+          return;
+        }
+
+        // 4) RPC draaien (server-side: land toewijzen + profiel + atleten)
+        const { data: init, error: initErr } = await supabase.rpc('init_new_manager', { p_manager_name: manager_name });
+        if (initErr) {
+          // Bekende fout: geen landen meer
+          if (String(initErr.message).toLowerCase().includes('geen landen')) {
+            msg.textContent = 'Geen landen meer beschikbaar. Voeg landen toe in Admin > Landen.';
+          } else {
+            msg.textContent = `Init-fout: ${initErr.message}`;
+          }
+          return;
+        }
+
+        msg.innerHTML = `✅ Account aangemaakt! Je land is <b>${init?.country ?? '-'}</b>. <a class="text-blue-600 underline" href="manager.html">Verder</a>.`;
+
+      } catch (err) {
+        console.error(err);
+        msg.textContent = 'Onbekende fout bij inschrijven. Check de console (F12) > Network voor details.';
+      }
+    });
+  </script>
 </body>
 </html>
