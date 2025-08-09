@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="nl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title data-i18n="athletes_title">Atleten</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-slate-50">
+<header class="bg-white border-b">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <h1 class="text-xl font-bold" data-i18n="app_title">Multisport-Manager</h1>
+    <nav class="flex gap-3 text-sm items-center">
+      <a data-i18n="nav_home" href="index.html">Home</a>
+      <a data-i18n="nav_events" href="events.html">Onderdelen</a>
+      <a data-i18n="nav_standings" href="standings.html">Klassement</a>
+      <a data-i18n="nav_manager" href="manager.html">Manager</a>
+      <a data-i18n="nav_admin" href="admin.html">Admin</a>
+      <a class="px-3 py-1 rounded bg-slate-900 text-white" data-i18n="nav_logout" href="logout.html">Uitloggen</a>
+      <span id="langSwitcher"></span>
+    </nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <section class="bg-white rounded-2xl shadow p-6">
+    <div class="flex flex-wrap gap-2 items-end mb-3">
+      <input id="q" class="border rounded px-3 py-2 text-sm w-64" data-i18n="search" placeholder="Zoeken"/>
+      <button id="btn" class="px-3 py-2 rounded bg-slate-900 text-white text-sm" data-i18n="filter">Filter</button>
+    </div>
+    <table class="w-full text-sm border rounded overflow-hidden">
+      <thead class="bg-slate-100"><tr>
+        <th class="p-2 text-left" data-i18n="name">Naam</th>
+        <th class="p-2 text-left" data-i18n="sport">Sport</th>
+        <th class="p-2 text-left" data-i18n="discipline">Discipline</th>
+        <th class="p-2 text-left" data-i18n="manager">Manager</th>
+        <th class="p-2 text-left" data-i18n="country">Land</th>
+      </tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+  import { supabase } from './js/supabaseClient.js';
+  import { renderLanguageSwitcher } from './js/i18n.js';
+  renderLanguageSwitcher(document.getElementById('langSwitcher'));
+
+  const q = document.getElementById('q');
+  const tbody = document.getElementById('body');
+
+  async function search() {
+    const text = q.value.trim().toLowerCase();
+    // haal atleten en hun managers op
+    const { data: athletes } = await supabase.from('athletes').select('name,sport,discipline,user_id').order('created_at',{ascending:false});
+    const userIds = Array.from(new Set((athletes??[]).map(a=>a.user_id))).filter(Boolean);
+    let profiles = [];
+    if (userIds.length) {
+      const { data } = await supabase.from('profiles').select('user_id,manager_name,country,email').in('user_id', userIds);
+      profiles = data ?? [];
+    }
+    tbody.innerHTML='';
+    (athletes??[])
+      .filter(a => !text || [a.name,a.sport,a.discipline].some(x => (x??'').toLowerCase().includes(text)))
+      .forEach(a=>{
+        const p = profiles.find(p=>p.user_id===a.user_id);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="p-2">${a.name}</td>
+                        <td class="p-2">${a.sport}</td>
+                        <td class="p-2">${a.discipline}</td>
+                        <td class="p-2">${p?.manager_name ?? '-'} (${p?.email ?? '-'})</td>
+                        <td class="p-2">${p?.country ?? '-'}</td>`;
+        tbody.appendChild(tr);
+      });
+  }
+  document.getElementById('btn').addEventListener('click', search);
+  await search();
+</script>
+<script type="module" src="./js/i18n.js"></script>
+</body></html>
