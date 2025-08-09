@@ -10,9 +10,9 @@
   <header class="bg-white border-b">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">Admin Dashboard</h1>
-      <nav class="flex items-center gap-3">
-        <a class="text-sm hover:underline" href="index.html">Home</a>
-        <a class="text-sm hover:underline" href="manager.html">Manager</a>
+      <nav class="flex items-center gap-3 text-sm">
+        <a class="hover:underline" href="manager.html">Manager</a>
+        <a class="px-3 py-1 rounded bg-slate-900 text-white" href="logout.html">Uitloggen</a>
       </nav>
     </div>
   </header>
@@ -22,7 +22,7 @@
     <div class="flex flex-wrap gap-2">
       <button class="tab px-4 py-2 rounded-lg bg-slate-900 text-white" data-tab="admins">Admins</button>
       <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="countries">Landen</button>
-      <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="users">Users</button>
+      <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="profiles">Profielen</button>
       <button class="tab px-4 py-2 rounded-lg bg-white border" data-tab="athletes">Atleten</button>
     </div>
 
@@ -35,7 +35,10 @@
           <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Toevoegen</button>
         </form>
       </div>
-      <p class="text-sm text-slate-600 mb-4">Alle e-mails in deze lijst hebben adminrechten. Verwijderen = adminrechten kwijt. Je kunt je <b>eigen</b> e-mail niet verwijderen om lockout te voorkomen.</p>
+      <p class="text-sm text-slate-600 mb-4">
+        E-mails in deze lijst hebben adminrechten. Verwijderen = adminrechten weg.
+        Je kunt je <b>eigen</b> e-mail niet verwijderen.
+      </p>
       <table class="w-full text-sm border rounded-lg overflow-hidden">
         <thead class="bg-slate-100">
           <tr><th class="text-left p-2">E-mail</th><th class="p-2 text-right">Acties</th></tr>
@@ -61,9 +64,9 @@
       </table>
     </section>
 
-    <!-- Users -->
-    <section id="tab-users" class="bg-white rounded-2xl shadow p-6 hidden">
-      <h2 class="text-lg font-semibold mb-4">Users</h2>
+    <!-- Profielen -->
+    <section id="tab-profiles" class="bg-white rounded-2xl shadow p-6 hidden">
+      <h2 class="text-lg font-semibold mb-4">Profielen</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm border rounded-lg overflow-hidden">
           <thead class="bg-slate-100">
@@ -76,7 +79,7 @@
               <th class="p-2">Acties</th>
             </tr>
           </thead>
-          <tbody id="usersBody"></tbody>
+          <tbody id="profilesBody"></tbody>
         </table>
       </div>
     </section>
@@ -86,7 +89,7 @@
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">Atleten</h2>
         <form id="athleteForm" class="flex flex-wrap gap-2">
-          <input id="athUserId" class="border rounded-lg px-3 py-2 text-sm" placeholder="User ID" required />
+          <input id="athUserId" class="border rounded-lg px-3 py-2 text-sm" placeholder="User ID (auth)" required />
           <input id="athName" class="border rounded-lg px-3 py-2 text-sm" placeholder="Naam" required />
           <input id="athSport" class="border rounded-lg px-3 py-2 text-sm" placeholder="Sport" required />
           <input id="athDisc" class="border rounded-lg px-3 py-2 text-sm" placeholder="Discipline" required />
@@ -119,10 +122,12 @@
     );
 
     /* ===== Guard: alleen admins ===== */
-    const meLocal = JSON.parse(localStorage.getItem('user'));
-    if (!meLocal) { alert('Eerst inloggen.'); location.href = 'login.html'; }
-    const { data: meDb, error: meErr } = await supabase.from('users').select('*').eq('id', meLocal.id).single();
-    if (meErr || !meDb?.is_admin) { alert('Geen toegang: alleen voor admins.'); location.href = 'index.html'; }
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session) { alert('Eerst inloggen.'); location.href = 'login.html'; }
+
+    const { data: meDb, error: meErr } = await supabase
+      .from('profiles').select('*').eq('user_id', session.session.user.id).single();
+    if (meErr || !meDb?.is_admin) { alert('Geen toegang: alleen voor admins.'); location.href = 'manager.html'; }
     localStorage.setItem('user', JSON.stringify(meDb));
 
     /* ===== Tabs ===== */
@@ -130,7 +135,7 @@
     const panels = {
       admins: document.getElementById('tab-admins'),
       countries: document.getElementById('tab-countries'),
-      users: document.getElementById('tab-users'),
+      profiles: document.getElementById('tab-profiles'),
       athletes: document.getElementById('tab-athletes')
     };
     tabs.forEach(btn => {
@@ -160,9 +165,8 @@
             return;
           }
           await supabase.from('admin_allowlist').delete().eq('email', row.email);
-          // triggers doen resync; UI verversen:
           await loadAllowlist();
-          await loadUsers();
+          await loadProfiles();
         });
         tbody.appendChild(tr);
       });
@@ -174,9 +178,8 @@
       if (!email) return;
       await supabase.from('admin_allowlist').insert([{ email }]);
       emailInput.value = '';
-      // triggers doen resync; UI verversen:
       await loadAllowlist();
-      await loadUsers();
+      await loadProfiles();
     });
 
     /* ===== Landen ===== */
@@ -214,41 +217,44 @@
       loadCountries();
     });
 
-    /* ===== Users ===== */
-    async function loadUsers() {
-      const { data } = await supabase.from('users').select('*').order('created_at', { ascending: true });
-      const tbody = document.getElementById('usersBody');
+    /* ===== Profielen ===== */
+    async function loadProfiles() {
+      const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
+      const tbody = document.getElementById('profilesBody');
       tbody.innerHTML = '';
-      (data ?? []).forEach(u => {
+      (data ?? []).forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-2">${u.manager_name ?? '-'}</td>
-          <td class="p-2">${u.email}</td>
-          <td class="p-2"><input class="border rounded px-2 py-1 w-40 countryInp" value="${u.country ?? ''}" /></td>
-          <td class="p-2"><input type="number" class="border rounded px-2 py-1 w-24 mpInp" value="${u.mp ?? 0}" /></td>
-          <td class="p-2"><input type="checkbox" class="adminChk" ${u.is_admin ? 'checked' : ''} ${u.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}></td>
+          <td class="p-2">${p.manager_name ?? '-'}</td>
+          <td class="p-2">${p.email}</td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-40 countryInp" value="${p.country ?? ''}" /></td>
+          <td class="p-2"><input type="number" class="border rounded px-2 py-1 w-24 mpInp" value="${p.mp ?? 0}" /></td>
+          <td class="p-2"><input type="checkbox" class="adminChk" ${p.is_admin ? 'checked' : ''} ${p.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}></td>
           <td class="p-2 text-right">
             <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
-            <button class="px-2 py-1 text-xs border rounded danger delUser" ${u.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}>Verwijder</button>
+            <button class="px-2 py-1 text-xs border rounded danger delProfile" ${p.email.toLowerCase()===meDb.email.toLowerCase()?'disabled':''}>Verwijder</button>
           </td>`;
         tr.querySelector('.save').addEventListener('click', async () => {
           const country = tr.querySelector('.countryInp').value.trim();
           const mp = parseInt(tr.querySelector('.mpInp').value || '0', 10);
-          // adminCheckbox is alleen bedoeld voor UI, maar echte bron = allowlist
+
+          // Admin wijzigen via allowlist
           const wantAdmin = tr.querySelector('.adminChk').checked;
-          if (wantAdmin && u.is_admin === false) {
-            await supabase.from('admin_allowlist').insert([{ email: u.email.toLowerCase() }]).catch(()=>{});
-          } else if (!wantAdmin && u.is_admin === true && u.email.toLowerCase() !== meDb.email.toLowerCase()) {
-            await supabase.from('admin_allowlist').delete().eq('email', u.email.toLowerCase());
+          if (wantAdmin && !p.is_admin) {
+            await supabase.from('admin_allowlist').insert([{ email: p.email.toLowerCase() }]).catch(()=>{});
+          } else if (!wantAdmin && p.is_admin && p.email.toLowerCase() !== meDb.email.toLowerCase()) {
+            await supabase.from('admin_allowlist').delete().eq('email', p.email.toLowerCase());
           }
-          await supabase.from('users').update({ country, mp }).eq('id', u.id);
+
+          await supabase.from('profiles').update({ country, mp }).eq('user_id', p.user_id);
           await loadAllowlist();
-          await loadUsers();
+          await loadProfiles();
         });
-        tr.querySelector('.delUser').addEventListener('click', async () => {
-          if (u.email.toLowerCase() === meDb.email.toLowerCase()) { alert('Je kunt jezelf niet verwijderen.'); return; }
-          await supabase.from('users').delete().eq('id', u.id);
-          loadUsers();
+        tr.querySelector('.delProfile').addEventListener('click', async () => {
+          if (p.email.toLowerCase() === meDb.email.toLowerCase()) { alert('Je kunt jezelf niet verwijderen.'); return; }
+          // profiel verwijderen -> verwijdert ook auth user niet automatisch (bewust)
+          await supabase.from('profiles').delete().eq('user_id', p.user_id);
+          await loadProfiles();
         });
         tbody.appendChild(tr);
       });
@@ -303,11 +309,8 @@
     /* ===== Initial load ===== */
     await loadAllowlist();
     await loadCountries();
-    await loadUsers();
+    await loadProfiles();
     await loadAthletes();
   </script>
-</body>
-</html>
-
 </body>
 </html>
