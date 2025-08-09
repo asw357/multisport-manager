@@ -1,39 +1,29 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Manager — Multisport-Manager</title>
+  <meta charset="UTF-8">
+  <title>Multisport-Manager - Manager Profiel</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50">
-  <header class="bg-white border-b">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Manager</h1>
-      <nav class="flex items-center gap-3 text-sm">
-        <a class="hover:underline" href="signup.html">Inschrijven</a>
-        <a class="hover:underline" href="login.html">Inloggen</a>
-        <a id="adminLink" class="hover:underline hidden" href="admin.html">Admin</a>
-        <a class="px-3 py-1 rounded bg-slate-900 text-white" href="logout.html">Uitloggen</a>
-      </nav>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-white shadow p-4 flex justify-between">
+    <h1 class="font-bold text-xl">Multisport-Manager</h1>
+    <div class="space-x-4">
+      <a href="index.html" class="text-gray-600 hover:underline">Home</a>
+      <a href="admin.html" id="adminLink" class="hidden text-red-600 hover:underline">Admin</a>
+      <button id="logoutBtn" class="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300">Uitloggen</button>
     </div>
-  </header>
+  </nav>
 
-  <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
-    <section class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-lg font-semibold mb-4">Profiel</h2>
-      <div class="grid md:grid-cols-2 gap-4 text-sm">
-        <p><span class="text-slate-500">Manager:</span> <span id="manager-name"></span></p>
-        <p><span class="text-slate-500">E-mail:</span> <span id="email"></span></p>
-        <p><span class="text-slate-500">Land:</span> <span id="country"></span></p>
-        <p><span class="text-slate-500">MP:</span> <span id="mp"></span></p>
-      </div>
-    </section>
+  <main class="p-6">
+    <h2 class="text-2xl font-bold mb-4">Jouw Profiel</h2>
+    <p><strong>Manager:</strong> <span id="manager-name"></span></p>
+    <p><strong>Email:</strong> <span id="email"></span></p>
+    <p><strong>Land:</strong> <span id="country"></span></p>
+    <p><strong>MP:</strong> <span id="mp"></span></p>
 
-    <section class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-lg font-semibold mb-4">Atleten</h2>
-      <ul id="athletes-list" class="text-sm space-y-2"></ul>
-    </section>
+    <h3 class="mt-6 text-xl font-semibold">Jouw Atleten</h3>
+    <ul id="athletes-list" class="mt-2 space-y-2"></ul>
   </main>
 
   <script type="module">
@@ -46,26 +36,30 @@
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session) { location.href = 'login.html'; }
 
-    // Profiel ophalen (fris)
-    const { data: profile, error: profErr } = await supabase
-      .from('profiles').select('*').eq('user_id', session.session.user.id).single();
+    let user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.user_id !== session.session.user.id) {
+      const { data: fresh } = await supabase.from('profiles').select('*').eq('user_id', session.session.user.id).single();
+      user = fresh;
+      localStorage.setItem('user', JSON.stringify(user));
+    }
 
-    if (profErr) { alert(profErr.message); location.href='login.html'; }
+    document.getElementById('manager-name').textContent = user.manager_name;
+    document.getElementById('email').textContent = user.email;
+    document.getElementById('country').textContent = user.country ?? 'Nog niet toegewezen';
+    document.getElementById('mp').textContent = user.mp ?? 0;
 
-    localStorage.setItem('user', JSON.stringify(profile));
+    if (user.is_admin) document.getElementById('adminLink')?.classList.remove('hidden');
 
-    document.getElementById('manager-name').textContent = profile.manager_name;
-    document.getElementById('email').textContent = profile.email;
-    document.getElementById('country').textContent = profile.country ?? 'Nog niet toegewezen';
-    document.getElementById('mp').textContent = profile.mp ?? 0;
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      localStorage.removeItem('user');
+      location.href = 'index.html';
+    });
 
-    if (profile.is_admin) document.getElementById('adminLink')?.classList.remove('hidden');
-
-    // Atleten laden
     const { data: athletes } = await supabase
       .from('athletes')
       .select('*')
-      .eq('user_id', profile.user_id)
+      .eq('user_id', user.user_id)
       .order('created_at', { ascending: true });
 
     const list = document.getElementById('athletes-list');
