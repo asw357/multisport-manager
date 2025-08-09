@@ -510,16 +510,30 @@
         tbody.appendChild(tr);
       });
     }
-    document.getElementById('editionForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('edName').value.trim();
-      const start_date = document.getElementById('edStart').value;
-      const end_date = document.getElementById('edEnd').value;
-      if (!name || !start_date || !end_date) return;
-      await supabase.from('editions').insert([{ name, start_date, end_date }]);
-      ['edName','edStart','edEnd'].forEach(id => document.getElementById(id).value='');
-      loadEditionsTable();
-    });
+   document.getElementById('editionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const season = document.getElementById('edSeason').value;         // 'zomer' | 'winter'
+  const host_city = document.getElementById('edCity').value.trim();
+  const host_country = document.getElementById('edCountry').value.trim();
+  const start_date = document.getElementById('edStart').value || null;
+  const end_date = document.getElementById('edEnd').value || null;
+
+  // Maak editie met autonaam via RPC
+  const { data: newId, error } = await supabase.rpc('admin_create_edition', {
+    p_season: season, p_host_city: host_city, p_host_country: host_country
+  });
+  if (error) { alert(error.message); return; }
+
+  // optioneel de datums invullen (kunnen later ook)
+  if (start_date || end_date) {
+    await supabase.from('editions').update({ start_date, end_date }).eq('id', newId);
+  }
+
+  // formulier leeg en verversen
+  ['edCity','edCountry','edStart','edEnd'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('edSeason').value='zomer';
+  await loadEditionsTable();
+});
 
     /* ===== Sporten & Onderdelen ===== */
     async function loadSports() {
