@@ -1,28 +1,90 @@
-<!doctype html><html lang="nl"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Multisport-Manager</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head><body class="bg-slate-50">
-<main class="max-w-3xl mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-4">Multisport-Manager</h1>
-  <div id="who" class="mb-6 text-slate-600">Laden…</div>
-  <div class="flex gap-2">
-    <a href="signup.html" class="px-3 py-2 rounded bg-blue-600 text-white">Inschrijven</a>
-    <a href="login.html" class="px-3 py-2 rounded bg-slate-900 text-white">Inloggen</a>
-    <a href="manager.html" class="px-3 py-2 rounded border">Manager</a>
-    <a href="admin.html" class="px-3 py-2 rounded border">Admin</a>
-    <a href="standings.html" class="px-3 py-2 rounded border">Klassement</a>
-  </div>
-</main>
-<script type="module">
-  import { getClient } from './config.js';
-  const supabase = await getClient();
-  const { data: s } = await supabase.auth.getSession();
-  if (s?.session) {
-    const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', s.session.user.id).single();
-    document.getElementById('who').textContent = `Ingelogd als ${prof?.email} ${prof?.is_admin?'(admin)':''}`;
-  } else {
-    document.getElementById('who').textContent = 'Niet ingelogd.';
-  }
-</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Multisport-Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50">
+  <header class="bg-white border-b">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Multisport-Manager</h1>
+      <nav class="flex gap-3 text-sm">
+        <a class="hover:underline" href="standings.html">Klassement</a>
+        <a class="hover:underline" href="manager.html">Manager</a>
+        <a class="hover:underline" href="admin.html" id="adminLink" style="display:none;">Admin</a>
+        <a class="px-3 py-1 rounded bg-slate-900 text-white" id="authBtn" href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <section class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-lg font-semibold mb-2">Welkom!</h2>
+      <p class="text-slate-600 mb-4">Bouw je team, beheer je atleten en strijd om MP’s.</p>
+      <div id="who" class="text-sm text-slate-700"></div>
+    </section>
+
+    <section id="quick" class="mt-6 grid md:grid-cols-3 gap-4"></section>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
+
+    const adminLink = document.getElementById('adminLink');
+    const authBtn   = document.getElementById('authBtn');
+    const who       = document.getElementById('who');
+    const quick     = document.getElementById('quick');
+
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session) {
+      who.textContent = 'Niet ingelogd. Maak een account aan of log in.';
+      quick.innerHTML = `
+        <a class="block bg-white rounded-xl border p-4 hover:shadow" href="signup.html">
+          <div class="font-semibold">Account aanmaken</div>
+          <div class="text-slate-600 text-sm">Start in 1 minuut.</div>
+        </a>
+        <a class="block bg-white rounded-xl border p-4 hover:shadow" href="login.html">
+          <div class="font-semibold">Inloggen</div>
+          <div class="text-slate-600 text-sm">Ga door waar je was.</div>
+        </a>
+        <a class="block bg-white rounded-xl border p-4 hover:shadow" href="standings.html">
+          <div class="font-semibold">Bekijk klassement</div>
+          <div class="text-slate-600 text-sm">Wie leidt er?</div>
+        </a>`;
+      authBtn.href = 'login.html';
+      authBtn.textContent = 'Inloggen';
+    } else {
+      const uid = session.session.user.id;
+      const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', uid).single();
+      who.innerHTML = `
+        Ingelogd als <strong>${prof?.manager_name ?? '(naam onbekend)'}</strong>
+        &lt;${prof?.email ?? session.session.user.email}&gt; — Land: ${prof?.country ?? '-'}
+        — MP: ${prof?.mp ?? 0} ${prof?.is_admin ? ' — <span class="text-emerald-600 font-semibold">ADMIN</span>' : ''}`;
+      authBtn.href = 'logout.html';
+      authBtn.textContent = 'Uitloggen';
+      if (prof?.is_admin) adminLink.style.display = 'inline';
+      quick.innerHTML = `
+        <a class="block bg-white rounded-xl border p-4 hover:shadow" href="manager.html">
+          <div class="font-semibold">Manager</div>
+          <div class="text-slate-600 text-sm">Profiel & team beheren.</div>
+        </a>
+        <a class="block bg-white rounded-xl border p-4 hover:shadow" href="standings.html">
+          <div class="font-semibold">Klassement</div>
+          <div class="text-slate-600 text-sm">Tussenstand & per editie.</div>
+        </a>
+        ${prof?.is_admin ? `
+          <a class="block bg-white rounded-xl border p-4 hover:shadow" href="admin.html">
+            <div class="font-semibold">Admin</div>
+            <div class="text-slate-600 text-sm">Alles beheren.</div>
+          </a>` : ''}
+      `;
+    }
+  </script>
+</body>
+</html>
