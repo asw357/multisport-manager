@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Klassement — Multisport-Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+  <header class="bg-white border-b">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Klassement</h1>
+      <nav class="flex items-center gap-3">
+        <a class="text-sm hover:underline" href="index.html">Home</a>
+        <a class="text-sm hover:underline" href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-4">
+    <section class="bg-white rounded-2xl shadow p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-lg font-semibold">Overzicht</h2>
+        <select id="edSel" class="ml-auto border rounded px-3 py-2 text-sm">
+          <option value="">(Alle edities)</option>
+        </select>
+      </div>
+      <table class="w-full text-sm border rounded overflow-hidden">
+        <thead class="bg-slate-100"><tr>
+          <th class="p-2 text-left">#</th>
+          <th class="p-2 text-left">Manager</th>
+          <th class="p-2 text-left">Land</th>
+          <th class="p-2 text-left">E-mail</th>
+          <th class="p-2 text-right">MP</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
+    );
+
+    const edSel = document.getElementById('edSel');
+    async function loadEditions() {
+      const { data } = await supabase.from('editions').select('*').order('start_date');
+      (data ?? []).forEach(ed => {
+        const o = document.createElement('option'); o.value = ed.id; o.textContent = `${ed.name} (${ed.start_date})`;
+        edSel.appendChild(o);
+      });
+    }
+
+    async function render() {
+      const ed = edSel.value || null;
+      let rows = [];
+      if (!ed) {
+        // totaal (huidige profiles.mp) als simpele ranking
+        const { data } = await supabase.from('profiles').select('manager_name, email, country, mp').order('mp', { ascending: false });
+        rows = (data ?? []).map((r,i) => ({ rank: i+1, manager: r.manager_name, email: r.email, country: r.country, mp: r.mp ?? 0 }));
+      } else {
+        // per editie: som uit mp_ledger
+        const { data: led } = await supabase.rpc('jsonb_build_object'); // noop to keep module happy (ignored)
+        const { data } = await supabase
+          .from('mp_ledger')
+          .select('user_id, delta_mp, profiles:profiles!inner(manager_name, email, country)')
+          .eq('edition_id', ed);
+        const agg = new Map();
+        (data ?? []).forEach(r => {
+          const key = r.user_id;
+          const cur = agg.get(key) || { manager: r.profiles?.manager_name, email: r.profiles?.email, country: r.profiles?.country, mp: 0 };
+          cur.mp += r.delta_mp; agg.set(key, cur);
+        });
+        rows = Array.from(agg.values()).sort((a,b)=>b.mp-a.mp).map((r,i)=>({ rank:i+1, ...r }));
+      }
+
+      const tb = document.getElementById('tb'); tb.innerHTML='';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="p-2">${r.rank}</td>
+          <td class="p-2">${r.manager ?? '-'}</td>
+          <td class="p-2">${r.country ?? '-'}</td>
+          <td class="p-2">${r.email ?? '-'}</td>
+          <td class="p-2 text-right">${r.mp ?? 0}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    edSel.addEventListener('change', render);
+    await loadEditions();
+    await render();
+  </script>
+</body>
+</html>
