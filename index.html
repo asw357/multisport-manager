@@ -1,80 +1,28 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Multisport-Manager</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-900">
-  <header class="bg-white border-b">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Multisport-Manager</h1>
-      <nav class="flex items-center gap-4">
-        <a class="text-sm hover:underline" href="index.html">Home</a>
-        <a class="text-sm hover:underline" href="signup.html">Inschrijven</a>
-        <a class="text-sm hover:underline" href="login.html" id="loginLink">Inloggen</a>
-        <a class="text-sm hover:underline hidden" id="managerLink" href="manager.html">Manager</a>
-        <a class="text-sm hover:underline hidden" id="adminLink" href="admin.html">Admin</a>
-        <button class="text-sm px-3 py-1 rounded bg-slate-900 text-white hidden" id="logoutBtn">Uitloggen</button>
-      </nav>
-    </div>
-  </header>
-
-  <main class="max-w-5xl mx-auto px-4 py-10">
-    <div class="grid md:grid-cols-2 gap-6">
-      <section class="bg-white rounded-2xl shadow p-6">
-        <h2 class="text-lg font-semibold mb-2">Welkom!</h2>
-        <p class="text-sm text-slate-600">Maak een account aan, krijg automatisch een land, start met MP, en ontvang meteen startatleten. Log daarna in om je managerprofiel te bekijken.</p>
-        <div class="mt-4 flex gap-3">
-          <a href="signup.html" class="px-4 py-2 rounded bg-blue-600 text-white text-sm">Inschrijven</a>
-          <a href="login.html" class="px-4 py-2 rounded border text-sm">Inloggen</a>
-        </div>
-      </section>
-
-      <section class="bg-white rounded-2xl shadow p-6">
-        <h2 class="text-lg font-semibold mb-2">Snelle links</h2>
-        <ul class="text-sm list-disc pl-5 space-y-1">
-          <li><a class="hover:underline" href="manager.html">Managerprofiel</a></li>
-          <li><a class="hover:underline" href="admin.html">Admin dashboard</a> <span class="text-slate-400">(alleen admin)</span></li>
-        </ul>
-      </section>
-    </div>
-  </main>
-
-  <script type="module">
-    const user = JSON.parse(localStorage.getItem('user'));
-    const managerLink = document.getElementById('managerLink');
-    const adminLink = document.getElementById('adminLink');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const loginLink = document.getElementById('loginLink');
-
-    if (user) {
-      managerLink.classList.remove('hidden');
-      logoutBtn.classList.remove('hidden');
-      loginLink.classList.add('hidden');
-      if (user.is_admin) adminLink.classList.remove('hidden');
-    }
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-const supabase = createClient(
-  'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-);
-
-const user = JSON.parse(localStorage.getItem('user'));
-if (user) {
-  const { data: fresh } = await supabase.from('users').select('*').eq('id', user.id).single();
-  if (fresh) {
-    localStorage.setItem('user', JSON.stringify(fresh));
-    // voorbeeld: adminLink tonen wanneer is_admin true is
-    document.getElementById('adminLink')?.classList.toggle('hidden', !fresh.is_admin);
+<!doctype html><html lang="nl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Multisport-Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-slate-50">
+<main class="max-w-3xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Multisport-Manager</h1>
+  <div id="who" class="mb-6 text-slate-600">Laden…</div>
+  <div class="flex gap-2">
+    <a href="signup.html" class="px-3 py-2 rounded bg-blue-600 text-white">Inschrijven</a>
+    <a href="login.html" class="px-3 py-2 rounded bg-slate-900 text-white">Inloggen</a>
+    <a href="manager.html" class="px-3 py-2 rounded border">Manager</a>
+    <a href="admin.html" class="px-3 py-2 rounded border">Admin</a>
+    <a href="standings.html" class="px-3 py-2 rounded border">Klassement</a>
+  </div>
+</main>
+<script type="module">
+  import { getClient } from './config.js';
+  const supabase = await getClient();
+  const { data: s } = await supabase.auth.getSession();
+  if (s?.session) {
+    const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', s.session.user.id).single();
+    document.getElementById('who').textContent = `Ingelogd als ${prof?.email} ${prof?.is_admin?'(admin)':''}`;
+  } else {
+    document.getElementById('who').textContent = 'Niet ingelogd.';
   }
-}
-
-    logoutBtn?.addEventListener('click', () => {
-      localStorage.removeItem('user');
-      location.href = 'index.html';
-    });
-  </script>
-</body>
-</html>
+</script>
+</body></html>
