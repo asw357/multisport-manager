@@ -155,23 +155,33 @@
 
       <div>
         <h3 class="font-semibold mb-2">Event koppelen aan editie</h3>
-        <form id="eventForm" class="flex flex-wrap gap-2">
-          <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
-          <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
-          <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm"></select>
-          <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
-          <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
-          <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
-          <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
-          <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
-        </form>
-        <div class="mt-4">
-          <h4 class="font-semibold mb-2">Events (per editie)</h4>
-          <select id="evListEdition" class="border rounded-lg px-3 py-2 text-sm mb-3"></select>
-          <ul id="eventsList" class="text-sm space-y-1"></ul>
-        </div>
-      </div>
-    </section>
+    <form id="eventForm" class="flex flex-wrap gap-2 items-end">
+  <select id="evEdition" class="border rounded-lg px-3 py-2 text-sm"></select>
+
+  <!-- Sport (verplicht) en Discipline (optioneel) -->
+  <select id="evSport" class="border rounded-lg px-3 py-2 text-sm"></select>
+  <select id="evDisc" class="border rounded-lg px-3 py-2 text-sm">
+    <option value="">(geen discipline)</option>
+  </select>
+
+  <input id="evOnderdeel" class="border rounded-lg px-3 py-2 text-sm" placeholder="Onderdeel (bv. 4x100m, Allround)" />
+
+  <select id="evGender" class="border rounded-lg px-3 py-2 text-sm">
+    <option value="M">Mannen</option>
+    <option value="V">Vrouwen</option>
+    <option value="X">Gemengd</option>
+  </select>
+
+  <input id="evMixedMen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Mannen (gemengd)">
+  <input id="evMixedWomen" type="number" class="border rounded-lg px-3 py-2 text-sm w-28 hidden" placeholder="Vrouwen (gemengd)">
+
+  <label class="flex items-center gap-2 text-sm"><input id="evTeam" type="checkbox"> Team</label>
+  <input id="evMin" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Min landen" value="2" />
+  <input id="evMax" type="number" class="border rounded-lg px-3 py-2 text-sm w-24" placeholder="Max/land" value="3" />
+  <input id="evRounds" class="border rounded-lg px-3 py-2 text-sm" placeholder='Rondes bv. ["kwalificatie","finale"]' />
+
+  <button class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Aanmaken</button>
+</form>
 
     <!-- Schema -->
     <section id="tab-schedule" class="bg-white rounded-2xl shadow p-6 hidden">
