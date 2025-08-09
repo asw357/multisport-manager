@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="nl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title data-i18n="simulations_title">Simulaties</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-slate-50">
+<header class="bg-white border-b">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <h1 class="text-xl font-bold" data-i18n="app_title">Multisport-Manager</h1>
+    <nav class="flex gap-3 text-sm items-center">
+      <a data-i18n="nav_home" href="index.html">Home</a>
+      <a data-i18n="nav_schedule" href="schedule.html">Schema</a>
+      <a data-i18n="nav_standings" href="standings.html">Klassement</a>
+      <a data-i18n="nav_manager" href="manager.html">Manager</a>
+      <a data-i18n="nav_admin" href="admin.html">Admin</a>
+      <a class="px-3 py-1 rounded bg-slate-900 text-white" data-i18n="nav_logout" href="logout.html">Uitloggen</a>
+      <span id="langSwitcher"></span>
+    </nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <section class="bg-white rounded-2xl shadow p-6">
+    <div class="flex items-end gap-2 mb-3">
+      <div class="grow">
+        <label class="text-sm" data-i18n="choose_edition">Kies editie</label>
+        <select id="edSel" class="w-full border rounded px-3 py-2 text-sm"></select>
+      </div>
+      <button id="btnLoad" class="px-3 py-2 rounded bg-slate-900 text-white text-sm" data-i18n="load">Laden</button>
+    </div>
+    <div id="status" class="text-sm text-slate-700"></div>
+  </section>
+</main>
+
+<script type="module">
+  import { supabase } from './js/supabaseClient.js';
+  import { renderLanguageSwitcher } from './js/i18n.js';
+  renderLanguageSwitcher(document.getElementById('langSwitcher'));
+
+  const edSel = document.getElementById('edSel');
+  const status = document.getElementById('status');
+
+  async function loadEditions(){
+    const { data } = await supabase.from('editions').select('*').order('start_date');
+    edSel.innerHTML='';
+    (data??[]).forEach(ed=>{
+      const o=document.createElement('option'); o.value=ed.id; o.textContent=`${ed.name}`; edSel.appendChild(o);
+    });
+  }
+  async function loadSim(){
+    status.textContent='—';
+    const ed = edSel.value; if(!ed) return;
+    const { data } = await supabase.from('simulation_state').select('*').eq('edition_id', ed).maybeSingle();
+    status.textContent = data ? `Status: ${data.status} · Dag: ${data.current_day ?? '-'}` : 'Geen simulatie-status.';
+  }
+  document.getElementById('btnLoad').addEventListener('click', loadSim);
+  await loadEditions(); await loadSim();
+</script>
+<script type="module" src="./js/i18n.js"></script>
+</body></html>
