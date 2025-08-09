@@ -1,74 +1,63 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <title>Multisport-Manager - Manager Profiel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
-  <nav class="bg-white shadow p-4 flex justify-between">
-    <h1 class="font-bold text-xl">Multisport-Manager</h1>
-    <div class="space-x-4">
-      <a href="index.html" class="text-gray-600 hover:underline">Home</a>
-      <a href="admin.html" id="adminLink" class="hidden text-red-600 hover:underline">Admin</a>
-      <button id="logoutBtn" class="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300">Uitloggen</button>
-    </div>
-  </nav>
+<!doctype html><html lang="nl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-slate-50">
+<header class="bg-white border-b">
+  <div class="max-w-5xl mx-auto p-4 flex justify-between">
+    <div class="font-bold">Manager</div>
+    <nav class="flex gap-2">
+      <a href="index.html" class="underline">Home</a>
+      <a href="admin.html" class="underline">Admin</a>
+      <a href="logout.html" class="underline">Uitloggen</a>
+    </nav>
+  </div>
+</header>
+<main class="max-w-5xl mx-auto p-4 space-y-6">
+  <section class="bg-white p-4 rounded shadow">
+    <h2 class="font-semibold mb-2">Profiel</h2>
+    <div id="me" class="text-sm text-slate-600">Laden…</div>
+    <form id="profForm" class="mt-3 flex flex-wrap gap-2">
+      <input id="managerName" class="border rounded p-2" placeholder="Managernaam">
+      <input id="country" class="border rounded p-2" placeholder="Land">
+      <button class="px-3 py-2 rounded bg-blue-600 text-white text-sm">Opslaan</button>
+    </form>
+  </section>
 
-  <main class="p-6">
-    <h2 class="text-2xl font-bold mb-4">Jouw Profiel</h2>
-    <p><strong>Manager:</strong> <span id="manager-name"></span></p>
-    <p><strong>Email:</strong> <span id="email"></span></p>
-    <p><strong>Land:</strong> <span id="country"></span></p>
-    <p><strong>MP:</strong> <span id="mp"></span></p>
+  <section class="bg-white p-4 rounded shadow">
+    <h2 class="font-semibold mb-2">Mijn atleten</h2>
+    <ul id="myAthletes" class="text-sm space-y-1"></ul>
+  </section>
+</main>
+<script type="module">
+import { getClient } from './config.js';
+const supabase = await getClient();
+const { data: s } = await supabase.auth.getSession();
+if (!s?.session) { location.href='login.html'; }
 
-    <h3 class="mt-6 text-xl font-semibold">Jouw Atleten</h3>
-    <ul id="athletes-list" class="mt-2 space-y-2"></ul>
-  </main>
+const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', s.session.user.id).single();
+document.getElementById('me').textContent = `${prof.email} — MP: ${prof.mp} ${prof.is_admin?'(admin)':''}`;
+managerName.value = prof.manager_name ?? ''; country.value = prof.country ?? '';
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(
-      'https://yqbejgnhmizkeuxxpbbb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
-    );
+profForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  await supabase.from('profiles').update({
+    manager_name: managerName.value.trim(),
+    country: country.value.trim()
+  }).eq('user_id', s.session.user.id);
+  location.reload();
+});
 
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session) { location.href = 'login.html'; }
+async function loadMine(){
+  const { data } = await supabase.from('athletes').select('*').eq('user_id', s.session.user.id).order('created_at',{ascending:false});
+  const ul = document.getElementById('myAthletes'); ul.innerHTML='';
+  (data??[]).forEach(a=>{
+    const li = document.createElement('li');
+    li.textContent = `${a.name} — ${a.sport} (${a.discipline})`;
+    ul.appendChild(li);
+  });
+}
+loadMine();
+</script>
+</body></html>
 
-    let user = JSON.parse(localStorage.getItem('user'));
-    if (!user || user.user_id !== session.session.user.id) {
-      const { data: fresh } = await supabase.from('profiles').select('*').eq('user_id', session.session.user.id).single();
-      user = fresh;
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-
-    document.getElementById('manager-name').textContent = user.manager_name;
-    document.getElementById('email').textContent = user.email;
-    document.getElementById('country').textContent = user.country ?? 'Nog niet toegewezen';
-    document.getElementById('mp').textContent = user.mp ?? 0;
-
-    if (user.is_admin) document.getElementById('adminLink')?.classList.remove('hidden');
-
-    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      localStorage.removeItem('user');
-      location.href = 'index.html';
-    });
-
-    const { data: athletes } = await supabase
-      .from('athletes')
-      .select('*')
-      .eq('user_id', user.user_id)
-      .order('created_at', { ascending: true });
-
-    const list = document.getElementById('athletes-list');
-    (athletes ?? []).forEach(a => {
-      const li = document.createElement('li');
-      li.className = "border rounded-lg px-3 py-2";
-      li.textContent = `${a.name} — ${a.sport} (${a.discipline})`;
-      list.appendChild(li);
-    });
-  </script>
-</body>
-</html>
