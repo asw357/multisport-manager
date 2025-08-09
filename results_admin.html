@@ -1,57 +1,59 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Uitslagen (Admin) — Multisport-Manager</title>
+  <title>Uitslagen invoeren (Admin)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50">
   <header class="bg-white border-b">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Uitslagen (Admin)</h1>
-      <nav class="flex items-center gap-3">
-        <a class="text-sm hover:underline" href="admin.html">Dashboard</a>
-        <a class="px-3 py-1 rounded bg-slate-900 text-white text-sm" href="logout.html">Uitloggen</a>
+      <h1 class="text-xl font-bold">Uitslagen — Admin</h1>
+      <nav class="flex gap-3 text-sm">
+        <a class="hover:underline" href="admin.html">Admin</a>
+        <a class="hover:underline" href="standings.html">Klassement</a>
+        <a class="px-3 py-1 rounded bg-slate-900 text-white" href="logout.html">Uitloggen</a>
       </nav>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
     <section class="bg-white rounded-2xl shadow p-6">
-      <div class="grid md:grid-cols-2 gap-4 items-end">
-        <div>
-          <label class="text-sm text-slate-600">Editie</label>
-          <select id="edSel" class="w-full border rounded px-3 py-2"></select>
+      <div class="flex flex-wrap gap-2 items-end">
+        <div class="grow">
+          <label class="text-sm">Editie</label>
+          <select id="edSel" class="w-full border rounded px-3 py-2 text-sm"></select>
         </div>
-        <div>
-          <label class="text-sm text-slate-600">Event</label>
-          <select id="evSel" class="w-full border rounded px-3 py-2"></select>
+        <div class="grow">
+          <label class="text-sm">Event</label>
+          <select id="evSel" class="w-full border rounded px-3 py-2 text-sm"></select>
         </div>
-      </div>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <input id="athSearch" class="border rounded px-3 py-2 text-sm" placeholder="Zoek atleetnaam of e-mail..." />
-        <button id="btnAddEntry" class="px-3 py-2 rounded bg-blue-600 text-white text-sm">Inschrijving toevoegen</button>
-        <button id="btnFinalize" class="px-3 py-2 rounded bg-green-600 text-white text-sm">Finaliseer & ken MP toe</button>
+        <button id="btnLoad" class="px-3 py-2 rounded bg-slate-900 text-white text-sm">Laden</button>
       </div>
     </section>
 
     <section class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-lg font-semibold mb-3">Deelnemers & Uitslagen</h2>
+      <h2 class="font-semibold mb-3">Deelnemers & uitslagen</h2>
+      <form id="addForm" class="flex flex-wrap gap-2 items-end mb-3">
+        <input id="athName" class="border rounded px-3 py-2 text-sm w-64" placeholder="Atleetnaam" />
+        <input id="athUser" class="border rounded px-3 py-2 text-sm w-64" placeholder="Manager e-mail of user_id" />
+        <input id="place" type="number" class="border rounded px-3 py-2 text-sm w-24" placeholder="Plaats" />
+        <input id="perf" class="border rounded px-3 py-2 text-sm w-40" placeholder="Performance (optioneel)" />
+        <button class="px-3 py-2 rounded bg-blue-600 text-white text-sm">Toevoegen</button>
+      </form>
+
       <table class="w-full text-sm border rounded overflow-hidden">
-        <thead class="bg-slate-100">
-          <tr>
-            <th class="p-2 text-left">Athlete</th>
-            <th class="p-2 text-left">Manager (e-mail)</th>
-            <th class="p-2 text-left">Sport/Discipline</th>
-            <th class="p-2 text-left">Plaats</th>
-            <th class="p-2 text-left">Performance</th>
-            <th class="p-2 text-right">Acties</th>
-          </tr>
-        </thead>
-        <tbody id="entriesBody"></tbody>
+        <thead class="bg-slate-100"><tr>
+          <th class="p-2 text-left">Atleet</th><th class="p-2 text-left">Manager</th><th class="p-2 text-left">Plaats</th><th class="p-2 text-left">Performance</th><th class="p-2">Acties</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
       </table>
-      <p id="msg" class="text-sm text-slate-600 mt-3"></p>
+
+      <div class="mt-4 flex gap-2">
+        <button id="btnFinalize" class="px-3 py-2 rounded bg-emerald-600 text-white text-sm">Finaliseer & ken MP toe</button>
+        <div id="msg" class="text-sm text-slate-600"></div>
+      </div>
     </section>
   </main>
 
@@ -62,126 +64,105 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmVqZ25obWl6a2V1eHhwYmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1Nzg2NDksImV4cCI6MjA3MDE1NDY0OX0.L_v6XgPh7F6KrWKlu72f6jbL_QTU-hdMQa0lA-QFryM'
     );
 
-    // guard: admin only
+    // Guard admin
     const { data: session } = await supabase.auth.getSession();
-    if (!session?.session) { alert('Eerst inloggen.'); location.href = 'login.html'; }
-    const { data: me, error: meErr } = await supabase.from('profiles').select('*').eq('user_id', session.session.user.id).single();
-    if (meErr || !me?.is_admin) { alert('Geen toegang'); location.href='manager.html'; }
+    if (!session?.session) location.href='login.html';
+    const uid = session.session.user.id;
+    const { data: me } = await supabase.from('profiles').select('*').eq('user_id', uid).single();
+    if (!me?.is_admin) { alert('Alleen admins'); location.href='index.html'; }
 
     const edSel = document.getElementById('edSel');
     const evSel = document.getElementById('evSel');
-    const msg = document.getElementById('msg');
+    const rows  = document.getElementById('rows');
+    const msg   = document.getElementById('msg');
+    let currentEdition = null;
+    let currentEvent = null;
 
     async function loadEditions() {
       const { data } = await supabase.from('editions').select('*').order('start_date');
       edSel.innerHTML = '';
-      (data ?? []).forEach(ed => {
-        const o = document.createElement('option'); o.value = ed.id; o.textContent = `${ed.name} (${ed.start_date} - ${ed.end_date})`;
-        edSel.appendChild(o);
+      (data??[]).forEach(ed=>{
+        const o = document.createElement('option'); o.value = ed.id; o.textContent = ed.name; edSel.appendChild(o);
       });
-      loadEvents();
     }
-    async function loadEvents() {
-      const ed = edSel.value; if (!ed) return;
-      const { data } = await supabase
-        .from('events')
-        .select('id, disciplines(name, sports(name))')
-        .eq('edition_id', ed).order('created_at');
+    async function loadEvents(ed) {
+      const { data } = await supabase.from('events').select('id, sub_name, gender, disciplines(name, sports(name))').eq('edition_id', ed).order('created_at');
       evSel.innerHTML = '';
-      (data ?? []).forEach(ev => {
+      (data??[]).forEach(ev=>{
         const o = document.createElement('option');
-        o.value = ev.id; o.textContent = `${ev.disciplines?.sports?.name} — ${ev.disciplines?.name}`;
-        evSel.appendChild(o);
+        const label = `${ev.disciplines?.sports?.name ?? ''}${ev.disciplines?.name ? ' — '+ev.disciplines?.name : ''}${ev.sub_name ? ' — '+ev.sub_name : ''} [${ev.gender}]`;
+        o.value = ev.id; o.textContent = label; evSel.appendChild(o);
       });
-      renderEntries();
     }
 
-    async function renderEntries() {
-      const ev = evSel.value; if (!ev) return;
-      const { data: entries } = await supabase
-        .from('event_entries')
-        .select('athlete_id, user_id, athletes(name, sport, discipline), profiles:profiles!inner(email)')
-        .eq('event_id', ev);
-      const { data: results } = await supabase
-        .from('event_results')
-        .select('*').eq('event_id', ev);
-
-      const mapRes = new Map((results??[]).map(r => [r.athlete_id, r]));
-      const tbody = document.getElementById('entriesBody'); tbody.innerHTML = '';
-
-      (entries ?? []).forEach(en => {
-        const r = mapRes.get(en.athlete_id);
+    async function renderRows() {
+      rows.innerHTML='';
+      const { data } = await supabase.from('results').select('id, athlete_name, manager_email, place, performance').eq('event_id', currentEvent).order('place');
+      (data??[]).forEach(r=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-2">${en.athletes?.name}</td>
-          <td class="p-2">${en.profiles?.email ?? en.user_id}</td>
-          <td class="p-2">${en.athletes?.sport} — ${en.athletes?.discipline}</td>
-          <td class="p-2"><input class="border rounded px-2 py-1 w-24 placeInp" type="number" min="1" value="${r?.place ?? ''}"></td>
-          <td class="p-2"><input class="border rounded px-2 py-1 perfInp" value="${r?.performance ?? ''}"></td>
+          <td class="p-2">${r.athlete_name ?? '-'}</td>
+          <td class="p-2">${r.manager_email ?? '-'}</td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-20 place" value="${r.place ?? ''}"></td>
+          <td class="p-2"><input class="border rounded px-2 py-1 w-40 perf" value="${r.performance ?? ''}"></td>
           <td class="p-2 text-right">
             <button class="px-2 py-1 text-xs border rounded save">Opslaan</button>
-            <button class="px-2 py-1 text-xs border rounded danger del">Verwijder</button>
+            <button class="px-2 py-1 text-xs border rounded del">Verwijder</button>
           </td>`;
-        tr.querySelector('.save').addEventListener('click', async () => {
-          const place = parseInt(tr.querySelector('.placeInp').value||'0',10);
-          const perf = tr.querySelector('.perfInp').value.trim();
-          if (!place || place<=0) { alert('Plaats > 0'); return; }
-          const { error } = await supabase.rpc('admin_set_result', {
-            p_event_id: ev,
-            p_athlete_id: en.athlete_id,
-            p_user_id: en.user_id,
-            p_place: place,
-            p_performance: perf,
-            p_notes: null
-          });
-          if (error) alert(error.message); else msg.textContent = 'Uitslag opgeslagen.';
-          renderEntries();
+        tr.querySelector('.save').addEventListener('click', async ()=>{
+          const place = parseInt(tr.querySelector('.place').value || '0',10) || null;
+          const performance = tr.querySelector('.perf').value.trim() || null;
+          await supabase.from('results').update({ place, performance }).eq('id', r.id);
+          renderRows();
         });
-        tr.querySelector('.del').addEventListener('click', async () => {
-          await supabase.rpc('admin_remove_entry', { p_event_id: ev, p_athlete_id: en.athlete_id });
-          renderEntries();
+        tr.querySelector('.del').addEventListener('click', async ()=>{
+          await supabase.from('results').delete().eq('id', r.id);
+          renderRows();
         });
-        tbody.appendChild(tr);
+        rows.appendChild(tr);
       });
     }
 
-    // Inschrijving toevoegen via zoek (atleet of e-mail)
-    async function addEntryFromSearch() {
-      const q = document.getElementById('athSearch').value.trim().toLowerCase();
-      if (!q) return;
-      // zoek atleet op naam, of pak manager via e-mail en eerste atleet
-      const { data: ats } = await supabase
-        .from('athletes')
-        .select('id, name, user_id')
-        .ilike('name', `%${q}%`)
-        .limit(1);
-      let athlete = ats?.[0];
-      let user_id = athlete?.user_id;
-      if (!athlete) {
-        const { data: prof } = await supabase.from('profiles').select('user_id').eq('email', q).single();
-        if (!prof) { alert('Geen atleet of e-mail gevonden'); return; }
-        user_id = prof.user_id;
-        const { data: ats2 } = await supabase.from('athletes').select('id, name, user_id').eq('user_id', user_id).limit(1);
-        athlete = ats2?.[0];
+    document.getElementById('btnLoad').addEventListener('click', async ()=>{
+      currentEdition = edSel.value;
+      await loadEvents(currentEdition);
+      currentEvent = evSel.value;
+      await renderRows();
+    });
+
+    document.getElementById('addForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if (!currentEvent) return;
+      const athlete_name = document.getElementById('athName').value.trim() || null;
+      const managerRef   = document.getElementById('athUser').value.trim();
+      const place = parseInt(document.getElementById('place').value || '0',10) || null;
+      const performance = document.getElementById('perf').value.trim() || null;
+
+      // lookup manager by email or user_id → email+user_id opslaan bij result (denormalized)
+      let manager_email = null, user_id = null;
+      if (managerRef) {
+        // probeer e-mail
+        const { data: byEmail } = await supabase.from('profiles').select('user_id,email').eq('email', managerRef).maybeSingle();
+        if (byEmail) { manager_email = byEmail.email; user_id = byEmail.user_id; }
+        else {
+          // probeer user_id
+          const { data: byUid } = await supabase.from('profiles').select('user_id,email').eq('user_id', managerRef).maybeSingle();
+          if (byUid) { manager_email = byUid.email; user_id = byUid.user_id; }
+        }
       }
-      if (!athlete) { alert('Geen atleet beschikbaar bij deze gebruiker.'); return; }
-      const ev = evSel.value;
-      const { error } = await supabase.rpc('admin_add_entry', { p_event_id: ev, p_athlete_id: athlete.id, p_user_id: user_id });
-      if (error) alert(error.message);
-      renderEntries();
-    }
 
-    async function finalizeEvent() {
-      const ev = evSel.value;
-      const { error, data } = await supabase.rpc('admin_finalize_event', { p_event_id: ev });
-      if (error) alert(error.message);
-      else msg.textContent = `MP toegekend voor ${data?.awards ?? 0} uitslagen.`;
-    }
+      await supabase.from('results').insert([{ event_id: currentEvent, athlete_name, manager_email, user_id, place, performance }]);
+      ['athName','athUser','place','perf'].forEach(id=>document.getElementById(id).value='');
+      await renderRows();
+    });
 
-    document.getElementById('btnAddEntry').addEventListener('click', addEntryFromSearch);
-    document.getElementById('btnFinalize').addEventListener('click', finalizeEvent);
-    edSel.addEventListener('change', loadEvents);
-    evSel.addEventListener('change', renderEntries);
+    document.getElementById('btnFinalize').addEventListener('click', async ()=>{
+      msg.textContent = 'Bezig met finaliseren...';
+      const { error } = await supabase.rpc('admin_finalize_results_and_award_mp', { p_event_id: currentEvent });
+      if (error) { msg.textContent = error.message; msg.className='text-red-600 text-sm'; return; }
+      msg.textContent = 'MP toegekend en resultaten gefinaliseerd.';
+      msg.className='text-emerald-700 text-sm';
+    });
 
     await loadEditions();
   </script>
