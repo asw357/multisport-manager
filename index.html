@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multisport-Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(120deg, #0d1b2a, #1b263b);
+      color: white;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      padding: 20px;
+      background: rgba(0,0,0,0.3);
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      background: #e63946;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ff4757;
+    }
+    .hidden {
+      display: none;
+    }
+    .logout-btn {
+      background: #2a9d8f;
+    }
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>🏆 Multisport-Manager</header>
+
+  <div class="container" id="auth-section">
+    <h2>Inloggen</h2>
+    <input type="email" id="login-email" placeholder="E-mail" />
+    <input type="password" id="login-password" placeholder="Wachtwoord" />
+    <button onclick="login()">Inloggen</button>
+
+    <h2>Registreren</h2>
+    <input type="text" id="signup-name" placeholder="Managernaam" />
+    <input type="email" id="signup-email" placeholder="E-mail" />
+    <input type="password" id="signup-password" placeholder="Wachtwoord" />
+    <button onclick="signup()">Registreren</button>
+  </div>
+
+  <div class="container hidden" id="profile-section">
+    <h2>Welkom, <span id="manager-name"></span>!</h2>
+    <p>Land: <span id="manager-country"></span></p>
+    <p>MP: <span id="manager-mp"></span></p>
+    <button class="logout-btn" onclick="logout()">Uitloggen</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function signup() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+
+      if (!name || !email || !password) {
+        alert("Vul alle velden in");
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        alert("Fout bij registreren: " + error.message);
+        return;
+      }
+
+      // Init manager
+      await supabase.rpc('init_manager', {
+        p_user_id: data.user.id,
+        p_display_name: name
+      });
+
+      alert("Account aangemaakt! Je kunt nu inloggen.");
+    }
+
+    async function login() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        alert("Fout bij inloggen: " + error.message);
+        return;
+      }
+
+      loadProfile();
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      document.getElementById('auth-section').classList.remove('hidden');
+      document.getElementById('profile-section').classList.add('hidden');
+    }
+
+    async function loadProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase.from('my_profile').select('*').eq('user_id', session.user.id).single();
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      document.getElementById('manager-name').textContent = data.display_name || '';
+      document.getElementById('manager-country').textContent = data.country_name || 'Onbekend';
+      document.getElementById('manager-mp').textContent = data.mp || 0;
+
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('profile-section').classList.remove('hidden');
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadProfile();
+      } else {
+        document.getElementById('auth-section').classList.remove('hidden');
+        document.getElementById('profile-section').classList.add('hidden');
+      }
+    });
+
+    // Bij laden kijken of al ingelogd
+    loadProfile();
+  </script>
+</body>
+</html>
