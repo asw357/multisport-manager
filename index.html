@@ -53,191 +53,113 @@
       background: #2a9d8f;
     }
   </style>
- <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>🏆 Multisport-Manager</header>
 
-  async function signup() {
-    try {
-      const name = document.getElementById('signup-name').value.trim();
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value;
+  <div class="container" id="auth-section">
+    <h2>Inloggen</h2>
+    <input type="email" id="login-email" placeholder="E-mail" />
+    <input type="password" id="login-password" placeholder="Wachtwoord" />
+    <button onclick="login()">Inloggen</button>
 
-      if (!name || !email || !password) {
-        alert("Vul alle velden in");
-        return;
-      }
+    <h2>Registreren</h2>
+    <input type="text" id="signup-name" placeholder="Managernaam" />
+    <input type="email" id="signup-email" placeholder="E-mail" />
+    <input type="password" id="signup-password" placeholder="Wachtwoord" />
+    <button onclick="signup()">Registreren</button>
+  </div>
 
-      // Stuur user terug naar deze pagina na e-mailbevestiging (indien actief)
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.href }
-      });
-
-      if (error) throw error;
-
-      // Als je in Supabase e-mailbevestiging UIT hebt staan, is er nu al een sessie.
-      const { data: s } = await sb.auth.getSession();
-      if (s?.session) {
-        // Init gebeurt ook via onAuthStateChange, maar we doen ‘m hier extra voor direct feedback.
-        await safeInitManager(s.session.user.id, name);
-        alert("Account aangemaakt! Je bent ingelogd.");
-        await loadProfile();
-      } else {
-        // E-mailbevestiging AAN: user moet eerst mail klikken
-        alert("Account aangemaakt! Check je e-mail om je account te bevestigen. Na bevestiging word je hierheen teruggestuurd en maken we je manager aan.");
-      }
-    } catch (e) {
-      alert("Fout bij registreren: " + (e?.message || e));
-    }
-  }
-
-  async function login() {
-    try {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-
-      await loadProfile();
-    } catch (e) {
-      alert("Fout bij inloggen: " + (e?.message || e));
-    }
-  }
-
-  async function logout() {
-    await sb.auth.signOut();
-    document.getElementById('auth-section').classList.remove('hidden');
-    document.getElementById('profile-section').classList.add('hidden');
-  }
-
-  // Roep init_manager alleen aan als manager-record nog niet bestaat
-  async function safeInitManager(userId, displayName) {
-    try {
-      // Bestaat er al een managers-record?
-      const { data: existing, error: profErr } = await sb
-        .from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
-
-      if (profErr) {
-        console.warn('Profiel check error:', profErr);
-      }
-      if (existing) return; // al geïnitialiseerd
-
-      const { error } = await sb.rpc('init_manager', { p_user_id: userId, p_display_name: displayName || 'Manager' });
-      if (error) throw error;
-    } catch (e) {
-      console.error('init_manager error:', e);
-      alert("Kon manager niet initialiseren: " + (e?.message || e));
-    }
-  }
-
-  async function loadProfile() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) return;
-
-    const { data, error } = await sb
-      .from('my_profile')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    document.getElementById('manager-name').textContent = data.display_name || '';
-    document.getElementById('manager-country').textContent = data.country_name || 'Onbekend';
-    document.getElementById('manager-mp').textContent = data.mp || 0;
-
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('profile-section').classList.remove('hidden');
-  }
-
-  // Init: zodra we een sessie krijgen (bij login of na e-mail bevestigen) → init manager
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-      // Haal evt. ingevoerde naam op uit het signup-veld voor de eerste init
-      const typedName = document.getElementById('signup-name')?.value?.trim();
-      await safeInitManager(session.user.id, typedName || session.user.email.split('@')[0]);
-      await loadProfile();
-    } else {
-      document.getElementById('auth-section').classList.remove('hidden');
-      document.getElementById('profile-section').classList.add('hidden');
-    }
-  });
-
-  // Bij laden: als al ingelogd, toon profiel
-  loadProfile();
-</script>
-
+  <div class="container hidden" id="profile-section">
+    <h2>Welkom, <span id="manager-name"></span>!</h2>
+    <p>Land: <span id="manager-country"></span></p>
+    <p>MP: <span id="manager-mp"></span></p>
+    <button class="logout-btn" onclick="logout()">Uitloggen</button>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function signup() {
-      const name = document.getElementById('signup-name').value.trim();
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value;
+      try {
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const password = document.getElementById('signup-password').value;
 
-      if (!name || !email || !password) {
-        alert("Vul alle velden in");
-        return;
+        if (!name || !email || !password) {
+          alert("Vul alle velden in");
+          return;
+        }
+
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.href }
+        });
+
+        if (error) throw error;
+
+        const { data: s } = await sb.auth.getSession();
+        if (s?.session) {
+          await safeInitManager(s.session.user.id, name);
+          alert("Account aangemaakt! Je bent ingelogd.");
+          await loadProfile();
+        } else {
+          alert("Account aangemaakt! Check je e-mail om je account te bevestigen. Na bevestiging maken we je manager aan.");
+        }
+      } catch (e) {
+        alert("Fout bij registreren: " + (e?.message || e));
       }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-
-      if (error) {
-        alert("Fout bij registreren: " + error.message);
-        return;
-      }
-
-      // Init manager
-      await supabase.rpc('init_manager', {
-        p_user_id: data.user.id,
-        p_display_name: name
-      });
-
-      alert("Account aangemaakt! Je kunt nu inloggen.");
     }
 
     async function login() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
+      try {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
 
-      if (error) {
-        alert("Fout bij inloggen: " + error.message);
-        return;
+        await loadProfile();
+      } catch (e) {
+        alert("Fout bij inloggen: " + (e?.message || e));
       }
-
-      loadProfile();
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       document.getElementById('auth-section').classList.remove('hidden');
       document.getElementById('profile-section').classList.add('hidden');
     }
 
+    async function safeInitManager(userId, displayName) {
+      try {
+        const { data: existing } = await sb
+          .from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
+
+        if (existing) return;
+
+        const { error } = await sb.rpc('init_manager', { p_user_id: userId, p_display_name: displayName || 'Manager' });
+        if (error) throw error;
+      } catch (e) {
+        console.error('init_manager error:', e);
+        alert("Kon manager niet initialiseren: " + (e?.message || e));
+      }
+    }
+
     async function loadProfile() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sb.auth.getSession();
       if (!session) return;
 
-      const { data, error } = await supabase.from('my_profile').select('*').eq('user_id', session.user.id).single();
+      const { data, error } = await sb
+        .from('my_profile')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
       if (error) {
         console.error(error);
         return;
@@ -251,16 +173,17 @@
       document.getElementById('profile-section').classList.remove('hidden');
     }
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    sb.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        loadProfile();
+        const typedName = document.getElementById('signup-name')?.value?.trim();
+        await safeInitManager(session.user.id, typedName || session.user.email.split('@')[0]);
+        await loadProfile();
       } else {
         document.getElementById('auth-section').classList.remove('hidden');
         document.getElementById('profile-section').classList.add('hidden');
       }
     });
 
-    // Bij laden kijken of al ingelogd
     loadProfile();
   </script>
 </body>
