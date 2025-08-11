@@ -5,219 +5,217 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Multisport-Manager</title>
   <style>
-    :root{--bg1:#0d1b2a;--bg2:#1b263b;--card:#ffffff10;--muted:#cbd5e1;--accent:#e63946;--ok:#2a9d8f}
+    :root{--bg1:#0d1b2a;--bg2:#1b263b;--card:#ffffff0f;--muted:#ffffffa6;--accent:#e63946;--ok:#2a9d8f}
     *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(120deg,var(--bg1),var(--bg2));color:#fff;margin:0}
-    header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:#00000033;position:sticky;top:0}
-    header h1{margin:0;font-size:1.2rem}
-    header nav a, header nav button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
-    header nav a:hover, header nav button:hover{background:#ffffff2a}
-    .wrap{max-width:900px;margin:24px auto;padding:0 16px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:880px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid #ffffff1a;border-radius:14px;padding:16px}
-    input{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff12;color:#fff}
-    button{padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#fff;margin:0;background:linear-gradient(120deg,var(--bg1),var(--bg2))}
+    header{padding:20px;background:#00000033;font-size:1.6rem;font-weight:700;text-align:center}
+    .container{max-width:420px;margin:28px auto;background:var(--card);padding:20px;border-radius:14px;border:1px solid #ffffff22}
+    h2{margin:6px 0 8px}
+    input{width:100%;padding:10px;margin:8px 0;border:none;border-radius:10px;background:#ffffff14;color:#fff;border:1px solid #ffffff22}
+    button{padding:11px 12px;width:100%;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
     button:hover{filter:brightness(1.05)}
-    .muted{color:var(--muted)}
+    .logout-btn{background:var(--ok)}
     .hidden{display:none}
     .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.9rem}
-    .ok{background:var(--ok)}
-    .error{background:#b91c1c}
-    .link{color:#fff;text-decoration:underline;cursor:pointer}
-    .center{text-align:center}
+    .links a{color:#fff;text-decoration:none;padding:8px 12px;background:#ffffff1a;border-radius:10px}
+    .links a:hover{background:#ffffff2a}
+    .status{margin-top:8px;font-size:.9rem;color:var(--muted);min-height:1.2em}
   </style>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
 </head>
 <body>
-  <header>
-    <h1>🏆 Multisport-Manager</h1>
-    <nav class="row" id="nav">
-      <a href="index.html">Home</a>
-      <a href="manager.html" id="nav-manager" class="hidden">Manager</a>
-      <a href="admin.html" id="nav-admin" class="hidden">Admin</a>
-      <button onclick="logout()" id="nav-logout" class="hidden">Uitloggen</button>
-    </nav>
-  </header>
+  <header>🏆 Multisport-Manager</header>
 
-  <div class="wrap">
-    <div class="grid">
-      <!-- Login -->
-      <section class="card" id="login-card">
-        <h2 style="margin-top:0">Inloggen</h2>
-        <input type="email" id="login-email" placeholder="E-mail" autocomplete="username email"/>
-        <div class="row" style="width:100%">
-          <input type="password" id="login-password" placeholder="Wachtwoord" autocomplete="current-password" style="flex:1"/>
-          <button type="button" onclick="login()" style="min-width:140px">Inloggen</button>
-        </div>
-        <p class="muted" style="margin:8px 0 0">Probleem met inloggen? Controleer e-mail/wachtwoord en probeer opnieuw.</p>
-        <div id="login-error" class="pill error hidden" style="margin-top:10px"></div>
-      </section>
+  <div class="container" id="auth-section">
+    <h2>Inloggen</h2>
+    <input type="email" id="login-email" placeholder="E-mail" autocomplete="username" />
+    <input type="password" id="login-password" placeholder="Wachtwoord" autocomplete="current-password" />
+    <button id="login-btn">Inloggen</button>
 
-      <!-- Registreren -->
-      <section class="card" id="signup-card">
-        <h2 style="margin-top:0">Registreren</h2>
-        <input type="text" id="signup-name" placeholder="Managernaam" autocomplete="nickname"/>
-        <input type="email" id="signup-email" placeholder="E-mail" autocomplete="email"/>
-        <div class="row" style="width:100%">
-          <input type="password" id="signup-password" placeholder="Wachtwoord" autocomplete="new-password" style="flex:1"/>
-          <button type="button" onclick="signup()" style="min-width:140px">Registreren</button>
-        </div>
-        <p class="muted" style="margin:8px 0 0">Na registreren word je manager automatisch aangemaakt (land + MP + starters).</p>
-        <div id="signup-info" class="pill ok hidden" style="margin-top:10px"></div>
-        <div id="signup-error" class="pill error hidden" style="margin-top:10px"></div>
-      </section>
-    </div>
+    <h2 style="margin-top:18px">Registreren</h2>
+    <input type="text" id="signup-name" placeholder="Managernaam" />
+    <input type="email" id="signup-email" placeholder="E-mail" autocomplete="email" />
+    <input type="password" id="signup-password" placeholder="Wachtwoord" autocomplete="new-password" />
+    <button id="signup-btn">Registreren</button>
 
-    <!-- Profiel -->
-    <section class="card hidden" id="profile-card">
-      <h2 style="margin-top:0">Welkom, <span id="manager-name"></span>!</h2>
-      <div class="row">
-        <div class="pill">E-mail: <span style="margin-left:6px" id="profile-email"></span></div>
-        <div class="pill">Land: <span style="margin-left:6px" id="profile-country"></span></div>
-        <div class="pill">MP: <span style="margin-left:6px" id="profile-mp"></span></div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <a class="pill link" href="manager.html">➡ Naar je managerpagina</a>
-        <a class="pill link hidden" id="profile-admin-link" href="admin.html">⚙️ Naar Admin</a>
-      </div>
-    </section>
-
-    <p class="center muted" style="margin-top:24px">© Multisport-Manager</p>
+    <div class="status" id="status"></div>
   </div>
 
-<script>
-  const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-  const ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <div class="container hidden" id="profile-section">
+    <h2>Welkom, <span id="manager-name"></span>!</h2>
+    <p>Land: <span id="manager-country"></span></p>
+    <p>MP: <span id="manager-mp"></span></p>
 
-  // === kleine helpers ===
-  const $ = (id) => document.getElementById(id);
-  const show = (id, vis=true) => { const el=$(id); if(!el) return; el.classList[vis?'remove':'add']('hidden'); }
-  const setText = (id, txt) => { const el=$(id); if(el) el.textContent = txt; }
-  const showMsg = (id, msg) => { const el=$(id); if(!el) return; el.textContent = msg; el.classList.remove('hidden'); }
-  const hideMsg = (id) => { const el=$(id); if(!el) return; el.classList.add('hidden'); el.textContent=''; }
+    <div class="row links" style="margin:10px 0">
+      <a href="manager.html">Naar managerprofiel</a>
+      <a href="admin.html" id="admin-link" class="hidden">Admin</a>
+    </div>
 
-  async function signup(){
-    hideMsg('signup-info'); hideMsg('signup-error');
-    const name = $('signup-name').value.trim();
-    const email = $('signup-email').value.trim();
-    const password = $('signup-password').value;
-    if(!name || !email || !password){ return showMsg('signup-error','Vul alle velden in.'); }
+    <button class="logout-btn" id="logout-btn">Uitloggen</button>
+    <div class="status" id="status-in"></div>
+  </div>
 
-    try{
-      const { error } = await sb.auth.signUp({
-        email, password,
-        options: { emailRedirectTo: window.location.href }
-      });
-      if (error) throw error;
-
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user){
-        await safeInitManager(session.user.id, name);
-        showMsg('signup-info','Account aangemaakt en ingelogd. Manager geactiveerd! ➜ Open je managerpagina.');
-        await afterLoginUI(session);
-      } else {
-        showMsg('signup-info','Account aangemaakt. Check je e-mail en bevestig je adres. Na bevestiging ga je hier automatisch door.');
+  <script>
+    // Wacht tot de Supabase lib geladen is (defer) én de DOM klaar is
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.supabase) {
+        alert("Kon Supabase library niet laden. Controleer je internet of adblocker.");
+        return;
       }
-    }catch(e){
-      showMsg('signup-error', e?.message || 'Onbekende fout bij registreren.');
-      console.error(e);
-    }
-  }
 
-  async function login(){
-    hideMsg('login-error');
-    const email = $('login-email').value.trim();
-    const password = $('login-password').value;
-    if(!email || !password){ return showMsg('login-error','Vul e-mail en wachtwoord in.'); }
+      const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+      const ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
 
-    try{
-      const { data: { user, session }, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // init manager (idempotent)
-      await safeInitManager((user||session?.user).id, $('signup-name')?.value?.trim() || email.split('@')[0]);
-      await afterLoginUI(session || { user });
-    }catch(e){
-      showMsg('login-error', e?.message || 'Inloggen mislukt.');
-      console.error(e);
-    }
-  }
+      // Elements
+      const el = (id) => document.getElementById(id);
+      const $auth = el('auth-section');
+      const $profile = el('profile-section');
+      const $adminLink = el('admin-link');
+      const setStatus = (msg) => el('status').textContent = msg || '';
+      const setStatusIn = (msg) => el('status-in').textContent = msg || '';
 
-  async function logout(){
-    await sb.auth.signOut();
-    show('login-card', true);
-    show('signup-card', true);
-    show('profile-card', false);
-    show('nav-manager', false);
-    show('nav-admin', false);
-    show('nav-logout', false);
-  }
+      // Buttons met veilige click handlers
+      el('login-btn').addEventListener('click', login);
+      el('signup-btn').addEventListener('click', signup);
+      el('logout-btn').addEventListener('click', logout);
 
-  async function safeInitManager(userId, displayName){
-    try{
-      const { data: existing } = await sb.from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
-      if (existing) return;
-      const { error } = await sb.rpc('init_manager', { p_user_id: userId, p_display_name: displayName || 'Manager' });
-      if (error) throw error;
-    }catch(e){
-      console.error('init_manager:', e);
-      alert('Let op: manager-initialisatie faalde: ' + (e?.message || e));
-    }
-  }
+      async function signup() {
+        try {
+          setStatus('Bezig met registreren…');
+          const name = el('signup-name').value.trim();
+          const email = el('signup-email').value.trim();
+          const password = el('signup-password').value;
 
-  async function afterLoginUI(session){
-    show('login-card', false);
-    show('signup-card', false);
-    show('profile-card', true);
-    show('nav-logout', true);
+          if (!name || !email || !password) {
+            setStatus('Vul alle velden in.');
+            return;
+          }
 
-    const email = (session?.user?.email || '').toLowerCase();
-    if(email === ADMIN_EMAIL){
-      show('nav-admin', true);
-      show('profile-admin-link', true);
-    }else{
-      show('nav-admin', false);
-      show('profile-admin-link', false);
-    }
-    show('nav-manager', true);
+          const { data, error } = await sb.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.href }
+          });
+          if (error) throw error;
 
-    try{
-      const { data } = await sb.from('my_profile').select('*').eq('user_id', session.user.id).single();
-      setText('manager-name', data?.display_name || '');
-      setText('profile-email', data?.email || '');
-      setText('profile-country', data?.country_name || 'Onbekend');
-      setText('profile-mp', data?.mp ?? 0);
-    }catch(e){
-      console.error('Profiel laden:', e);
-      setText('manager-name', session.user.email.split('@')[0]);
-      setText('profile-email', session.user.email);
-      setText('profile-country','?');
-      setText('profile-mp','?');
-    }
-  }
+          const { data: s } = await sb.auth.getSession();
+          if (s?.session) {
+            await safeInitManager(s.session.user.id, name);
+            await loadProfile();
+            setStatus('');
+            alert('Account aangemaakt! Je bent ingelogd.');
+          } else {
+            setStatus('Account aangemaakt. Controleer je e-mail om te bevestigen.');
+            alert('Account aangemaakt! Check je e-mail voor bevestiging.');
+          }
+        } catch (e) {
+          console.error(e);
+          setStatus('Fout bij registreren: ' + (e?.message || e));
+          alert('Fout bij registreren: ' + (e?.message || e));
+        }
+      }
 
-  // Auth state (ook bij terugkeer na e-mailbevestiging)
-  sb.auth.onAuthStateChange(async (_event, current) => {
-    if(current?.user){
-      await safeInitManager(current.user.id, $('signup-name')?.value?.trim() || current.user.email.split('@')[0]);
-      await afterLoginUI(current);
-    }
-  });
+      async function login() {
+        try {
+          setStatus('Inloggen…');
+          const email = el('login-email').value.trim();
+          const password = el('login-password').value;
 
-  // Bij laden: als al ingelogd → toon profiel
-  (async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if(session?.user){ await afterLoginUI(session); }
-  })();
+          if (!email || !password) {
+            setStatus('Vul e-mail en wachtwoord in.');
+            return;
+          }
 
-  // >>> BELANGRIJK: bind functies aan window voor onclick <<<
-  window.login = login;
-  window.signup = signup;
-  window.logout = logout;
-</script>
+          const { data, error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+
+          setStatus('');
+          await loadProfile();
+        } catch (e) {
+          console.error(e);
+          setStatus('Fout bij inloggen: ' + (e?.message || e));
+          alert('Fout bij inloggen: ' + (e?.message || e));
+        }
+      }
+
+      async function logout() {
+        await sb.auth.signOut();
+        $auth.classList.remove('hidden');
+        $profile.classList.add('hidden');
+        setStatus('Je bent uitgelogd.');
+        setStatusIn('');
+      }
+
+      // Init manager alleen als nog niet bestaat
+      async function safeInitManager(userId, displayName) {
+        try {
+          const { data: existing, error: profErr } = await sb
+            .from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
+          if (profErr) console.warn('Profiel check:', profErr);
+          if (existing) return;
+
+          const { error } = await sb.rpc('init_manager', {
+            p_user_id: userId,
+            p_display_name: displayName || 'Manager'
+          });
+          if (error) throw error;
+        } catch (e) {
+          console.error('init_manager:', e);
+          alert('Kon manager niet initialiseren: ' + (e?.message || e));
+        }
+      }
+
+      async function loadProfile() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await sb
+          .from('my_profile')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error(error);
+          setStatusIn('Kon profiel niet laden.');
+          return;
+        }
+
+        el('manager-name').textContent = data.display_name || '';
+        el('manager-country').textContent = data.country_name || 'Onbekend';
+        el('manager-mp').textContent = data.mp ?? 0;
+
+        // Toon admin link indien admin
+        if ((session.user.email || '').toLowerCase() === ADMIN_EMAIL) {
+          $adminLink.classList.remove('hidden');
+        } else {
+          $adminLink.classList.add('hidden');
+        }
+
+        $auth.classList.add('hidden');
+        $profile.classList.remove('hidden');
+        setStatus('');
+        setStatusIn('');
+      }
+
+      // Sessie events: na login/confirm → init & profiel
+      sb.auth.onAuthStateChange(async (_event, session) => {
+        if (session) {
+          const typedName = el('signup-name')?.value?.trim();
+          await safeInitManager(session.user.id, typedName || session.user.email.split('@')[0]);
+          await loadProfile();
+        } else {
+          $auth.classList.remove('hidden');
+          $profile.classList.add('hidden');
+        }
+      });
+
+      // Bij laden, kijk of al ingelogd
+      loadProfile();
+    });
+  </script>
 </body>
 </html>
