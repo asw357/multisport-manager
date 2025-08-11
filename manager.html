@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Managerprofiel • Multisport-Manager</title>
+  <style>
+    :root{
+      --bg1:#0d1b2a; --bg2:#1b263b; --card:#ffffff0f; --muted:#ffffff99; --accent:#e63946; --ok:#2a9d8f;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; color:#fff;
+      background:linear-gradient(120deg,var(--bg1),var(--bg2));
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:16px 20px; background:#00000033; position:sticky; top:0; backdrop-filter:saturate(1.2) blur(6px);
+    }
+    header h1{margin:0; font-size:1.25rem}
+    header nav a, header button{
+      color:#fff; text-decoration:none; border:0; background:transparent; padding:8px 12px; border-radius:10px; cursor:pointer;
+    }
+    header nav a:hover, header button:hover{background:#ffffff1a}
+    .wrap{max-width:1100px; margin:24px auto; padding:0 16px}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px}
+    @media (min-width:900px){ .grid{ grid-template-columns: 360px 1fr; } }
+    .card{background:var(--card); border:1px solid #ffffff1a; border-radius:14px; padding:16px}
+    .muted{color:var(--muted)}
+    label{display:block; font-size:.9rem; margin:.5rem 0 .25rem}
+    input, select{
+      width:100%; padding:10px; border-radius:10px; border:1px solid #ffffff2a; background:#ffffff12; color:#fff;
+    }
+    .btn{display:inline-flex; align-items:center; gap:8px; border:0; border-radius:10px; padding:10px 14px; cursor:pointer; font-weight:600}
+    .btn.primary{background:var(--accent); color:#fff}
+    .btn.ghost{background:#ffffff1a; color:#fff}
+    .btn.ok{background:var(--ok); color:#fff}
+    table{width:100%; border-collapse:collapse; margin-top:10px}
+    th, td{padding:10px; border-bottom:1px solid #ffffff1f; text-align:left; font-size:.95rem}
+    th{font-weight:700}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .pill{display:inline-flex; padding:6px 10px; border-radius:999px; background:#ffffff14; border:1px solid #ffffff1f; font-size:.85rem}
+    .right{margin-left:auto}
+    .hint{font-size:.9rem; margin:6px 0 0}
+    .empty{padding:18px; text-align:center; color:var(--muted)}
+    .footer{margin:24px 0; text-align:center; color:var(--muted); font-size:.9rem}
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>
+    <h1>🏆 Multisport-Manager • Managerprofiel</h1>
+    <nav class="row">
+      <a href="index.html" class="pill">Home</a>
+      <button class="pill" onclick="refreshData()">⟳ Vernieuwen</button>
+      <button class="pill" onclick="logout()">Uitloggen</button>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div id="auth-warning" class="card" style="display:none">
+      <h2>Niet ingelogd</h2>
+      <p class="muted">Je bent niet aangemeld. Ga naar de <a href="index.html" style="color:#fff">homepage</a> om in te loggen of te registreren.</p>
+    </div>
+
+    <div class="grid" id="content" style="display:none">
+      <!-- Profiel -->
+      <section class="card">
+        <h2>Jouw profiel</h2>
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1">
+            <label>Managernaam</label>
+            <input id="display_name" placeholder="Managernaam"/>
+          </div>
+          <button class="btn ok" onclick="saveName()">Opslaan</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div class="pill">E-mail: <span id="email" style="margin-left:6px"></span></div>
+          <div class="pill">Land: <span id="country" style="margin-left:6px"></span></div>
+          <div class="pill">MP: <span id="mp" style="margin-left:6px"></span></div>
+        </div>
+        <p class="hint muted">Je land en start-MP worden automatisch toegekend bij de eerste login.</p>
+      </section>
+
+      <!-- Atleten -->
+      <section class="card">
+        <div class="row" style="align-items:center">
+          <h2 style="margin:0">Jouw atleten</h2>
+          <span class="pill right" id="ath-count">0 atleten</span>
+        </div>
+
+        <div class="row" style="margin-top:6px">
+          <input id="q" placeholder="Zoek op sport, onderdeel of rating…" oninput="applyFilters()"/>
+          <select id="sportFilter" onchange="applyFilters()">
+            <option value="">Alle sporten</option>
+          </select>
+          <select id="activeFilter" onchange="applyFilters()">
+            <option value="">Status: alle</option>
+            <option value="true">Actief</option>
+            <option value="false">Inactief</option>
+          </select>
+        </div>
+
+        <table id="ath-table">
+          <thead>
+            <tr>
+              <th>Sport</th>
+              <th>Onderdeel</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th>Aangemaakt</th>
+            </tr>
+          </thead>
+          <tbody id="ath-body">
+            <tr><td colspan="5" class="empty">Laden…</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <div class="footer">© Multisport-Manager</div>
+  </div>
+
+  <script>
+    // === Supabase setup ===
+    const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let sessionUser = null;
+    let athletesRaw = [];
+
+    async function ensureSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      sessionUser = session?.user || null;
+
+      if (!sessionUser) {
+        document.getElementById('auth-warning').style.display = '';
+        document.getElementById('content').style.display = 'none';
+        return false;
+      }
+      document.getElementById('auth-warning').style.display = 'none';
+      document.getElementById('content').style.display = '';
+      return true;
+    }
+
+    async function loadProfile() {
+      const ok = await ensureSession();
+      if (!ok) return;
+
+      // Profiel
+      const { data: prof, error } = await supabase
+        .from('my_profile')
+        .select('*')
+        .eq('user_id', sessionUser.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        // Als managerrecord nog niet bestaat (bij oude accounts), init aanroepen.
+        try {
+          await supabase.rpc('init_manager', { p_user_id: sessionUser.id, p_display_name: sessionUser.email.split('@')[0] });
+          const again = await supabase.from('my_profile').select('*').eq('user_id', sessionUser.id).single();
+          if (!again.error) bindProfile(again.data);
+        } catch(e) { console.error(e); }
+      } else {
+        bindProfile(prof);
+      }
+
+      // Atleten
+      await loadAthletes();
+    }
+
+    function bindProfile(prof){
+      document.getElementById('display_name').value = prof?.display_name || '';
+      document.getElementById('email').textContent = prof?.email || '';
+      document.getElementById('country').textContent = prof?.country_name || 'Onbekend';
+      document.getElementById('mp').textContent = prof?.mp ?? 0;
+    }
+
+    async function loadAthletes() {
+      const { data, error } = await supabase
+        .from('athletes')
+        .select('id,sport,event,rating,active,created_at')
+        .order('sport', { ascending: true })
+        .order('event', { ascending: true });
+
+      if (error) { console.error(error); return; }
+
+      athletesRaw = data || [];
+      fillSportFilter(athletesRaw);
+      renderAthletes(athletesRaw);
+    }
+
+    function fillSportFilter(rows){
+      const sel = document.getElementById('sportFilter');
+      // reset (behoud eerste optie)
+      while (sel.options.length > 1) sel.remove(1);
+      const sports = [...new Set(rows.map(r => r.sport))].sort();
+      sports.forEach(s => {
+        const o = document.createElement('option'); o.value = s; o.textContent = s;
+        sel.appendChild(o);
+      });
+    }
+
+    function applyFilters(){
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const s = document.getElementById('sportFilter').value;
+      const a = document.getElementById('activeFilter').value;
+
+      let rows = athletesRaw.slice();
+
+      if (s) rows = rows.filter(r => r.sport === s);
+      if (a) rows = rows.filter(r => String(r.active) === a);
+      if (q) rows = rows.filter(r =>
+        (r.sport || '').toLowerCase().includes(q) ||
+        (r.event || '').toLowerCase().includes(q) ||
+        String(r.rating ?? '').toLowerCase().includes(q)
+      );
+
+      renderAthletes(rows);
+    }
+
+    function renderAthletes(rows){
+      const body = document.getElementById('ath-body');
+      body.innerHTML = '';
+
+      if (!rows.length){
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 5;
+        td.className = 'empty';
+        td.textContent = 'Geen atleten gevonden.';
+        tr.appendChild(td);
+        body.appendChild(tr);
+      } else {
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(r.sport)}</td>
+            <td>${escapeHtml(r.event)}</td>
+            <td>${Number(r.rating ?? 0).toFixed(1)}</td>
+            <td>${r.active ? 'Actief' : 'Inactief'}</td>
+            <td>${new Date(r.created_at).toLocaleString()}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      document.getElementById('ath-count').textContent = `${rows.length} atleet${rows.length===1?'':'ten'}`;
+    }
+
+    async function saveName(){
+      if (!sessionUser) return;
+      const name = document.getElementById('display_name').value.trim();
+      if (!name){ alert('Managernaam mag niet leeg zijn.'); return; }
+
+      const { error } = await supabase
+        .from('managers')
+        .update({ display_name: name })
+        .eq('user_id', sessionUser.id);
+
+      if (error){ alert('Opslaan mislukt: ' + error.message); return; }
+      alert('Naam bijgewerkt!');
+      // herladen voor de zekerheid
+      loadProfile();
+    }
+
+    function escapeHtml(s){
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function refreshData(){
+      await loadProfile();
+    }
+
+    async function logout(){
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    // Init
+    supabase.auth.onAuthStateChange((_e, _s) => loadProfile());
+    loadProfile();
+  </script>
+</body>
+</html>
