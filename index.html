@@ -88,76 +88,67 @@
   </div>
 
 <script>
-  // ==== Supabase config ====
   const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
   const ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ==== Helpers ====
+  // === kleine helpers ===
   const $ = (id) => document.getElementById(id);
   const show = (id, vis=true) => { const el=$(id); if(!el) return; el.classList[vis?'remove':'add']('hidden'); }
   const setText = (id, txt) => { const el=$(id); if(el) el.textContent = txt; }
   const showMsg = (id, msg) => { const el=$(id); if(!el) return; el.textContent = msg; el.classList.remove('hidden'); }
   const hideMsg = (id) => { const el=$(id); if(!el) return; el.classList.add('hidden'); el.textContent=''; }
 
-  // ==== Auth flows ====
   async function signup(){
     hideMsg('signup-info'); hideMsg('signup-error');
-
     const name = $('signup-name').value.trim();
     const email = $('signup-email').value.trim();
     const password = $('signup-password').value;
-
     if(!name || !email || !password){ return showMsg('signup-error','Vul alle velden in.'); }
 
     try{
-      const { data, error } = await sb.auth.signUp({
+      const { error } = await sb.auth.signUp({
         email, password,
         options: { emailRedirectTo: window.location.href }
       });
-      if(error) throw error;
+      if (error) throw error;
 
-      // Als email-confirmatie UIT staat heb je meteen een sessie
-      const { data: s } = await sb.auth.getSession();
-      if(s?.session){
-        await safeInitManager(s.session.user.id, name);
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user){
+        await safeInitManager(session.user.id, name);
         showMsg('signup-info','Account aangemaakt en ingelogd. Manager geactiveerd! ➜ Open je managerpagina.');
-        await afterLoginUI(s.session);
-      }else{
-        showMsg('signup-info','Account aangemaakt. Check je e-mail en bevestig je adres. Keer hier terug om automatisch door te gaan.');
+        await afterLoginUI(session);
+      } else {
+        showMsg('signup-info','Account aangemaakt. Check je e-mail en bevestig je adres. Na bevestiging ga je hier automatisch door.');
       }
     }catch(e){
-      showMsg('signup-error', (e && e.message) ? e.message : 'Onbekende fout bij registreren.');
+      showMsg('signup-error', e?.message || 'Onbekende fout bij registreren.');
       console.error(e);
     }
   }
 
   async function login(){
     hideMsg('login-error');
-
     const email = $('login-email').value.trim();
     const password = $('login-password').value;
     if(!email || !password){ return showMsg('login-error','Vul e-mail en wachtwoord in.'); }
 
     try{
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) throw error;
+      const { data: { user, session }, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
-      // Init manager als dat nog niet gedaan is
-      const typedName = $('signup-name')?.value?.trim();
-      await safeInitManager(data.user.id, typedName || email.split('@')[0]);
-
-      await afterLoginUI({ user: data.user, access_token: (await sb.auth.getSession()).data?.session?.access_token });
+      // init manager (idempotent)
+      await safeInitManager((user||session?.user).id, $('signup-name')?.value?.trim() || email.split('@')[0]);
+      await afterLoginUI(session || { user });
     }catch(e){
-      showMsg('login-error', (e && e.message) ? e.message : 'Inloggen mislukt.');
+      showMsg('login-error', e?.message || 'Inloggen mislukt.');
       console.error(e);
     }
   }
 
   async function logout(){
     await sb.auth.signOut();
-    // UI reset
     show('login-card', true);
     show('signup-card', true);
     show('profile-card', false);
@@ -166,23 +157,18 @@
     show('nav-logout', false);
   }
 
-  // Maak manager + starters als deze nog niet bestaat (idempotent)
   async function safeInitManager(userId, displayName){
     try{
-      const { data: existing, error: e1 } = await sb.from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
-      if(e1){ console.warn('Profiel check:', e1); }
-      if(existing) return;
-
+      const { data: existing } = await sb.from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
+      if (existing) return;
       const { error } = await sb.rpc('init_manager', { p_user_id: userId, p_display_name: displayName || 'Manager' });
-      if(error) throw error;
+      if (error) throw error;
     }catch(e){
       console.error('init_manager:', e);
-      // Niet blokkeren, maar wel melden
       alert('Let op: manager-initialisatie faalde: ' + (e?.message || e));
     }
   }
 
-  // Profiel UI na login
   async function afterLoginUI(session){
     show('login-card', false);
     show('signup-card', false);
@@ -199,18 +185,14 @@
     }
     show('nav-manager', true);
 
-    // Load profiel
     try{
-      const { data, error } = await sb.from('my_profile').select('*').eq('user_id', session.user.id).single();
-      if(error) throw error;
-
-      setText('manager-name', data.display_name || '');
-      setText('profile-email', data.email || '');
-      setText('profile-country', data.country_name || 'Onbekend');
-      setText('profile-mp', data.mp ?? 0);
+      const { data } = await sb.from('my_profile').select('*').eq('user_id', session.user.id).single();
+      setText('manager-name', data?.display_name || '');
+      setText('profile-email', data?.email || '');
+      setText('profile-country', data?.country_name || 'Onbekend');
+      setText('profile-mp', data?.mp ?? 0);
     }catch(e){
       console.error('Profiel laden:', e);
-      // fallback: minimale info
       setText('manager-name', session.user.email.split('@')[0]);
       setText('profile-email', session.user.email);
       setText('profile-country','?');
@@ -218,7 +200,7 @@
     }
   }
 
-  // Auth-state luisteren (ook voor terugkeer na e-mailbevestiging)
+  // Auth state (ook bij terugkeer na e-mailbevestiging)
   sb.auth.onAuthStateChange(async (_event, current) => {
     if(current?.user){
       await safeInitManager(current.user.id, $('signup-name')?.value?.trim() || current.user.email.split('@')[0]);
@@ -226,11 +208,16 @@
     }
   });
 
-  // Bij laden: als al ingelogd → toon profiel direct
+  // Bij laden: als al ingelogd → toon profiel
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
     if(session?.user){ await afterLoginUI(session); }
   })();
+
+  // >>> BELANGRIJK: bind functies aan window voor onclick <<<
+  window.login = login;
+  window.signup = signup;
+  window.logout = logout;
 </script>
 </body>
 </html>
