@@ -5,50 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin • Multisport-Manager</title>
   <style>
-    :root{
-      --bg1:#0d1b2a; --bg2:#1b263b; --card:#ffffff0f; --muted:#ffffff99; --accent:#e63946; --ok:#2a9d8f; --warn:#f1c40f; --bad:#e67e22;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; color:#fff; background:linear-gradient(120deg,var(--bg1),var(--bg2))}
-    header{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; background:#00000033; position:sticky; top:0}
-    header h1{margin:0; font-size:1.2rem}
-    nav a, nav button{color:#fff; text-decoration:none; border:0; background:#ffffff1a; padding:8px 12px; border-radius:10px; cursor:pointer}
-    nav a:hover, nav button:hover{background:#ffffff2a}
-    .wrap{max-width:1200px; margin:24px auto; padding:0 16px}
-    .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
-    .tab{padding:8px 12px; border-radius:999px; background:#ffffff14; border:1px solid #ffffff22; cursor:pointer}
-    .tab.active{background:var(--accent)}
-    .card{background:var(--card); border:1px solid #ffffff1a; border-radius:14px; padding:16px; margin-bottom:14px}
-    .muted{color:var(--muted)}
-    .grid{display:grid; grid-template-columns:1fr; gap:16px}
-    @media (min-width:1000px){ .grid-2{grid-template-columns: 1fr 1fr;} }
-    input, select{width:100%; padding:10px; border-radius:10px; border:1px solid #ffffff2a; background:#ffffff12; color:#fff}
-    .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-    .btn{display:inline-flex; align-items:center; gap:6px; border:0; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:600}
-    .btn.primary{background:var(--accent); color:#fff}
-    .btn.ok{background:var(--ok); color:#fff}
-    .btn.warn{background:var(--warn); color:#000}
-    .btn.bad{background:var(--bad); color:#fff}
-    .right{margin-left:auto}
-    table{width:100%; border-collapse:collapse}
-    th, td{padding:10px; border-bottom:1px solid #ffffff1f; text-align:left; font-size:.95rem; vertical-align:top}
-    th{font-weight:700}
-    .small{font-size:.85rem}
-    .pill{display:inline-flex; padding:6px 10px; border-radius:999px; background:#ffffff14; border:1px solid #ffffff1f; font-size:.85rem}
-    .empty{padding:18px; text-align:center; color:var(--muted)}
-    .danger{color:#ffd1b2}
-    .success{color:#bff0d8}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
+    header a:hover, header button:hover{background:#ffffff2a}
+    .wrap{max-width:1200px;margin:20px auto;padding:0 14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .tab{padding:8px 12px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff22;cursor:pointer}
+    .tab.active{background:#e63946}
+    .card{background:#ffffff10;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #ffffff1f;text-align:left;font-size:.95rem;vertical-align:top}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.85rem}
+    .status{margin-top:6px;font-size:.9rem;color:#ffffffcc;min-height:1.1em;white-space:pre-line}
+    .errorbox{margin-top:8px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
+    .btn{display:inline-block;padding:8px 10px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#ffffff1a;color:#fff}
+    .btn.ok{background:#2a9d8f}
+    .btn.warn{background:#f1c40f;color:#000}
+    .btn.bad{background:#e67e22}
+    .muted{color:#ffffffb5}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header>
-  <h1>🏅 Admin • Multisport-Manager</h1>
-  <nav class="row">
+  <div class="row">
     <a href="index.html">Home</a>
     <a href="manager.html">Manager</a>
+  </div>
+  <div class="row">
+    <button onclick="refreshAll()">⟳ Vernieuwen</button>
     <button onclick="logout()">Uitloggen</button>
-  </nav>
+  </div>
 </header>
 
 <div class="wrap">
@@ -59,7 +49,7 @@
 
   <div id="no-admin" class="card" style="display:none">
     <h2>Geen toegang</h2>
-    <p class="muted">Je bent niet geautoriseerd voor deze pagina.</p>
+    <p class="muted">Alleen <b>wilcoboesveld12@hotmail.com</b> mag deze pagina gebruiken.</p>
   </div>
 
   <div id="app" style="display:none">
@@ -69,7 +59,6 @@
       <button class="tab" data-tab="config" onclick="showTab('config', this)">Config</button>
       <button class="tab" data-tab="managers" onclick="showTab('managers', this)">Managers</button>
       <button class="tab" data-tab="athletes" onclick="showTab('athletes', this)">Atleten</button>
-      <button class="tab right" onclick="refreshAll()">⟳ Vernieuwen</button>
     </div>
 
     <!-- COUNTRIES -->
@@ -78,19 +67,17 @@
         <h2 style="margin:0">Landenbeheer</h2>
         <span class="pill" id="country-count">0 landen</span>
       </div>
-      <div class="row" style="margin:8px 0 12px">
-        <input id="new-country-name" placeholder="Landnaam (bv. Australië)">
-        <input id="new-country-code" placeholder="Code (bv. AUS)">
-        <button class="btn ok" onclick="addCountry()">Land toevoegen</button>
+      <div class="row" style="margin:6px 0 10px">
+        <input id="new-country-name" placeholder="Landnaam (bv. Australië)" style="flex:2;min-width:200px">
+        <input id="new-country-code" placeholder="Code (bv. AUS)" style="flex:1;min-width:120px">
+        <button class="btn ok" onclick="addCountry()">Toevoegen</button>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>#</th><th>Land</th><th>Code</th><th>Toegewezen aan</th><th>Acties</th>
-          </tr>
-        </thead>
-        <tbody id="countries-body"><tr><td colspan="5" class="empty">Laden…</td></tr></tbody>
+        <thead><tr><th>#</th><th>Land</th><th>Code</th><th>Toegewezen aan</th><th>Acties</th></tr></thead>
+        <tbody id="countries-body"><tr><td colspan="5" class="muted">Laden…</td></tr></tbody>
       </table>
+      <div class="status" id="st-countries"></div>
+      <div class="errorbox" id="err-countries"></div>
     </section>
 
     <!-- STARTERS -->
@@ -99,42 +86,32 @@
         <h2 style="margin:0">Starter-templates</h2>
         <span class="pill" id="starters-count">0 regels</span>
       </div>
-      <div class="grid grid-2">
-        <div class="card">
-          <h3 style="margin-top:0">Nieuwe template</h3>
-          <div class="row">
-            <input id="st-sport" placeholder="Sport (bv. Atletiek)">
-            <input id="st-event" placeholder="Onderdeel (bv. 100m)">
-          </div>
-          <div class="row">
-            <input id="st-qty" type="number" min="1" value="1" placeholder="Aantal">
-            <input id="st-rating" type="number" step="0.1" min="0" max="10" value="5.0" placeholder="Basis rating">
-          </div>
-          <div class="row">
-            <input id="st-stats" placeholder='Stats JSON (bv. {"speed":70})'>
-          </div>
-          <button class="btn ok" onclick="addStarter()">Toevoegen</button>
-        </div>
-        <div>
-          <table>
-            <thead>
-              <tr><th>Sport</th><th>Onderdeel</th><th>Aantal</th><th>Rating</th><th>Stats</th><th>Acties</th></tr>
-            </thead>
-            <tbody id="starters-body"><tr><td colspan="6" class="empty">Laden…</td></tr></tbody>
-          </table>
-        </div>
+      <div class="row" style="margin:8px 0">
+        <input id="st-sport" placeholder="Sport (bv. Atletiek)" style="flex:1;min-width:160px">
+        <input id="st-event" placeholder="Onderdeel (bv. 100m)" style="flex:1;min-width:160px">
+        <input id="st-qty" type="number" min="1" value="1" placeholder="Aantal" style="max-width:120px">
+        <input id="st-rating" type="number" step="0.1" min="0" max="10" value="5.0" placeholder="Rating" style="max-width:120px">
+        <input id="st-stats" placeholder='Stats JSON ({"speed":70})' style="flex:2;min-width:200px">
+        <button class="btn ok" onclick="addStarter()">Toevoegen</button>
       </div>
+      <table>
+        <thead><tr><th>Sport</th><th>Onderdeel</th><th>Aantal</th><th>Rating</th><th>Stats</th><th>Acties</th></tr></thead>
+        <tbody id="starters-body"><tr><td colspan="6" class="muted">Laden…</td></tr></tbody>
+      </table>
+      <div class="status" id="st-starters"></div>
+      <div class="errorbox" id="err-starters"></div>
     </section>
 
     <!-- CONFIG -->
     <section class="card" id="tab-config" style="display:none">
-      <h2 style="margin-top:0">Configuratie</h2>
-      <div class="row">
-        <label class="pill">Starting MP</label>
-        <input id="cfg-starting-mp" type="number" min="0" value="100" style="max-width:200px">
+      <h2 style="margin:0">Configuratie</h2>
+      <div class="row" style="margin:8px 0">
+        <label class="pill" style="background:#ffffff18">Starting MP</label>
+        <input id="cfg-starting-mp" type="number" min="0" value="100" style="max-width:160px">
         <button class="btn ok" onclick="saveConfig()">Opslaan</button>
       </div>
-      <p class="muted small">Dit bepaalt hoeveel MP een nieuwe manager ontvangt bij aanmaken.</p>
+      <div class="status" id="st-config"></div>
+      <div class="errorbox" id="err-config"></div>
     </section>
 
     <!-- MANAGERS -->
@@ -142,12 +119,14 @@
       <div class="row">
         <h2 style="margin:0">Managers</h2>
         <span class="pill" id="managers-count">0</span>
-        <input id="mgr-q" class="right" placeholder="Zoek op e-mail/naam/land" oninput="renderManagers()">
+        <input id="mgr-q" placeholder="Zoek op e-mail/naam/land" oninput="renderManagers()" style="flex:1;min-width:220px;margin-left:auto">
       </div>
       <table>
         <thead><tr><th>E-mail</th><th>Naam</th><th>Land</th><th>MP</th><th>Aangemaakt</th><th>Acties</th></tr></thead>
-        <tbody id="managers-body"><tr><td colspan="6" class="empty">Laden…</td></tr></tbody>
+        <tbody id="managers-body"><tr><td colspan="6" class="muted">Laden…</td></tr></tbody>
       </table>
+      <div class="status" id="st-managers"></div>
+      <div class="errorbox" id="err-managers"></div>
     </section>
 
     <!-- ATHLETES -->
@@ -155,369 +134,381 @@
       <div class="row">
         <h2 style="margin:0">Atleten</h2>
         <span class="pill" id="ath-count">0</span>
-        <input id="ath-q" class="right" placeholder="Zoek (sport/onderdeel/e-mail)" oninput="renderAthletes()">
+        <input id="ath-q" placeholder="Zoek (sport/onderdeel/e-mail)" oninput="renderAthletes()" style="flex:1;min-width:220px;margin-left:auto">
       </div>
       <table>
         <thead><tr><th>Manager</th><th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Status</th><th>Aangemaakt</th><th>Acties</th></tr></thead>
-        <tbody id="ath-body"><tr><td colspan="7" class="empty">Laden…</td></tr></tbody>
+        <tbody id="ath-body"><tr><td colspan="7" class="muted">Laden…</td></tr></tbody>
       </table>
+      <div class="status" id="st-athletes"></div>
+      <div class="errorbox" id="err-athletes"></div>
     </section>
   </div>
 </div>
 
 <script>
-  const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-  const ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // ===== Supabase init (ES5) =====
+  if (!window.supabase){ alert("Kon Supabase JS niet laden (unpkg geblokkeerd?)."); }
+  var SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  var ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let sessionUser = null;
-  let countries = [];
-  let starters = [];
-  let managers = [];
-  let athletes = [];
+  // ===== state =====
+  var sessionUser = null;
+  var countries = [], starters = [], managers = [], athletes = [];
 
-  function showTab(name, el){
-    [...document.querySelectorAll('.tab')].forEach(b => b.classList.remove('active'));
-    if (el) el.classList.add('active');
-    ['countries','starters','config','managers','athletes'].forEach(id => {
-      document.getElementById('tab-'+id).style.display = (id===name)?'':'none';
+  // ===== helpers =====
+  function el(id){ return document.getElementById(id); }
+  function setStatus(id, t){ el(id).textContent = t || ''; }
+  function showErr(id, msg){ var b = el(id); b.style.display = msg ? 'block' : 'none'; b.textContent = msg || ''; }
+  function showTab(name, btn){
+    var tabs = ['countries','starters','config','managers','athletes'], i;
+    for(i=0;i<tabs.length;i++){ el('tab-'+tabs[i]).style.display = (tabs[i]===name)?'':'none'; }
+    var btns = document.getElementsByClassName('tab');
+    for(i=0;i<btns.length;i++){ btns[i].classList.remove('active'); }
+    if (btn) btn.classList.add('active');
+  }
+  function showAuth(){ el('auth-warning').style.display=''; el('no-admin').style.display='none'; el('app').style.display='none'; }
+  function showNoAdmin(){ el('auth-warning').style.display='none'; el('no-admin').style.display=''; el('app').style.display='none'; }
+  function showApp(){ el('auth-warning').style.display='none'; el('no-admin').style.display='none'; el('app').style.display=''; }
+
+  // ===== boot =====
+  sb.auth.onAuthStateChange(function(_e, session){ if(session){ init(); } else { showAuth(); } });
+  init();
+
+  function init(){
+    sb.auth.getSession().then(function(r){
+      sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
+      if (!sessionUser){ showAuth(); return; }
+      if (!sessionUser.email || sessionUser.email.toLowerCase() !== ADMIN_EMAIL){ showNoAdmin(); return; }
+      showApp();
+      refreshAll();
     });
   }
 
-  async function ensureAdmin(){
-    const { data: { session } } = await sb.auth.getSession();
-    sessionUser = session?.user || null;
-
-    if (!sessionUser) {
-      document.getElementById('auth-warning').style.display = '';
-      document.getElementById('no-admin').style.display = 'none';
-      document.getElementById('app').style.display = 'none';
-      return false;
-    }
-    if ((sessionUser.email || '').toLowerCase() !== ADMIN_EMAIL) {
-      document.getElementById('auth-warning').style.display = 'none';
-      document.getElementById('no-admin').style.display = '';
-      document.getElementById('app').style.display = 'none';
-      return false;
-    }
-    document.getElementById('auth-warning').style.display = 'none';
-    document.getElementById('no-admin').style.display = 'none';
-    document.getElementById('app').style.display = '';
-    return true;
+  function refreshAll(){
+    loadCountries(); loadStarters(); loadConfig(); loadManagers(); loadAthletes();
   }
 
-  async function refreshAll(){
-    await Promise.all([loadCountries(), loadStarters(), loadConfig(), loadManagers(), loadAthletes()]);
-  }
+  function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
 
   // ===== Countries =====
-  async function loadCountries(){
-    const { data, error } = await sb.from('countries').select('id,name,code,order_index,assigned_to,assigned_at').order('order_index');
-    if (error) { console.error(error); return; }
-    countries = data || [];
-    document.getElementById('country-count').textContent = `${countries.length} landen`;
-    renderCountries();
+  function loadCountries(){
+    setStatus('st-countries','Laden…'); showErr('err-countries','');
+    sb.from('countries').select('id,name,code,order_index,assigned_to,assigned_at').order('order_index')
+      .then(function(res){
+        if(res.error){ showErr('err-countries', res.error.message || String(res.error)); setStatus('st-countries',''); return; }
+        countries = res.data || [];
+        el('country-count').textContent = String(countries.length) + ' landen';
+        renderCountries();
+        setStatus('st-countries','');
+      });
   }
 
   function renderCountries(){
-    const body = document.getElementById('countries-body');
-    body.innerHTML = '';
-    if (!countries.length){
-      body.innerHTML = `<tr><td colspan="5" class="empty">Geen landen</td></tr>`;
-      return;
-    }
-    countries.forEach((c, idx) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${c.order_index}</td>
-        <td>${esc(c.name)}</td>
-        <td>${esc(c.code||'')}</td>
-        <td>${c.assigned_to ? `<span class="small">${c.assigned_to}</span>` : '<span class="muted small">vrij</span>'}</td>
-        <td class="row">
-          <button class="btn" onclick="reorderCountry(${c.id}, ${idx}, -1)">↑</button>
-          <button class="btn" onclick="reorderCountry(${c.id}, ${idx}, 1)">↓</button>
-          <button class="btn warn" ${c.assigned_to?'':'disabled'} title="Vrijgeven" onclick="unassignCountry(${c.id})">Vrijgeven</button>
-          <button class="btn bad" ${c.assigned_to?'disabled':''} onclick="deleteCountry(${c.id})">Verwijderen</button>
-        </td>
-      `;
+    var body = el('countries-body'); body.innerHTML='';
+    if(!countries.length){ body.innerHTML = '<tr><td colspan="5" class="muted">Geen landen</td></tr>'; return; }
+    for(var i=0;i<countries.length;i++){
+      var c = countries[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+c.order_index+'</td>'+
+        '<td>'+esc(c.name)+'</td>'+
+        '<td>'+esc(c.code||"")+'</td>'+
+        '<td>'+(c.assigned_to ? ('<span class="muted">'+esc(c.assigned_to)+'</span>') : '<span class="muted">vrij</span>')+'</td>'+
+        '<td class="row">'+
+          '<button class="btn" onclick="reorderCountry('+c.id+','+i+',-1)">↑</button>'+
+          '<button class="btn" onclick="reorderCountry('+c.id+','+i+',1)">↓</button>'+
+          '<button class="btn warn" '+(c.assigned_to?'':'disabled')+' onclick="unassignCountry('+c.id+')">Vrijgeven</button>'+
+          '<button class="btn bad" '+(c.assigned_to?'disabled':'')+' onclick="deleteCountry('+c.id+')">Verwijderen</button>'+
+        '</td>';
       body.appendChild(tr);
-    });
+    }
   }
 
-  async function addCountry(){
-    const name = document.getElementById('new-country-name').value.trim();
-    const code = document.getElementById('new-country-code').value.trim();
-    if (!name){ alert('Geef een landnaam.'); return; }
-    const maxOrder = Math.max(0, ...countries.map(c => c.order_index||0)) + 1;
-    const { error } = await sb.from('countries').insert({ name, code: code || null, order_index: maxOrder });
-    if (error){ alert(error.message); return; }
-    document.getElementById('new-country-name').value = '';
-    document.getElementById('new-country-code').value = '';
-    await loadCountries();
+  function addCountry(){
+    var name = (el('new-country-name').value||'').trim();
+    var code = (el('new-country-code').value||'').trim();
+    if(!name){ alert('Geef een landnaam.'); return; }
+    var maxOrder = 0, i;
+    for(i=0;i<countries.length;i++){ if((countries[i].order_index||0)>maxOrder) maxOrder=countries[i].order_index; }
+    var newOrder = maxOrder+1;
+    setStatus('st-countries','Toevoegen…'); showErr('err-countries','');
+    sb.from('countries').insert({ name:name, code: code||null, order_index:newOrder })
+      .then(function(r){
+        if(r.error){ showErr('err-countries', r.error.message || String(r.error)); setStatus('st-countries',''); return; }
+        el('new-country-name').value=''; el('new-country-code').value='';
+        loadCountries();
+      });
   }
 
-  async function reorderCountry(id, idx, delta){
-    const swapIdx = idx + delta;
+  function reorderCountry(id, idx, delta){
+    var swapIdx = idx + delta;
     if (swapIdx < 0 || swapIdx >= countries.length) return;
-    const a = countries[idx], b = countries[swapIdx];
-    // swap order_index
-    const { error: e1 } = await sb.from('countries').update({ order_index: b.order_index }).eq('id', a.id);
-    const { error: e2 } = await sb.from('countries').update({ order_index: a.order_index }).eq('id', b.id);
-    if (e1 || e2){ alert((e1||e2).message); return; }
-    await loadCountries();
+    var a = countries[idx], b = countries[swapIdx];
+    setStatus('st-countries','Volgorde wijzigen…'); showErr('err-countries','');
+    sb.from('countries').update({ order_index:b.order_index }).eq('id', a.id)
+      .then(function(r1){
+        if(r1.error){ showErr('err-countries', r1.error.message || String(r1.error)); setStatus('st-countries',''); return; }
+        sb.from('countries').update({ order_index:a.order_index }).eq('id', b.id)
+          .then(function(r2){
+            if(r2.error){ showErr('err-countries', r2.error.message || String(r2.error)); setStatus('st-countries',''); return; }
+            loadCountries();
+          });
+      });
   }
 
-  async function unassignCountry(id){
-    if (!confirm('Zeker weten? Land wordt vrijgegeven.')) return;
-    const { error } = await sb.from('countries').update({ assigned_to: null, assigned_at: null }).eq('id', id);
-    if (error){ alert(error.message); return; }
-    await loadCountries();
+  function unassignCountry(id){
+    if(!confirm('Zeker weten? Land wordt vrijgegeven.')) return;
+    setStatus('st-countries','Vrijgeven…'); showErr('err-countries','');
+    sb.from('countries').update({ assigned_to:null, assigned_at:null }).eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-countries', r.error.message||String(r.error)); }
+        setStatus('st-countries',''); loadCountries();
+      });
   }
 
-  async function deleteCountry(id){
-    if (!confirm('Verwijderen? Dit kan alleen als het land niet is toegewezen.')) return;
-    const { error } = await sb.from('countries').delete().eq('id', id);
-    if (error){ alert(error.message); return; }
-    await loadCountries();
+  function deleteCountry(id){
+    if(!confirm('Verwijderen? Alleen mogelijk als land niet is toegewezen.')) return;
+    setStatus('st-countries','Verwijderen…'); showErr('err-countries','');
+    sb.from('countries').delete().eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-countries', r.error.message||String(r.error)); }
+        setStatus('st-countries',''); loadCountries();
+      });
   }
 
   // ===== Starters =====
-  async function loadStarters(){
-    const { data, error } = await sb.from('starter_templates').select('*').order('sport').order('event');
-    if (error) { console.error(error); return; }
-    starters = data || [];
-    document.getElementById('starters-count').textContent = `${starters.length} regels`;
-    renderStarters();
+  function loadStarters(){
+    setStatus('st-starters','Laden…'); showErr('err-starters','');
+    sb.from('starter_templates').select('*').order('sport').order('event')
+      .then(function(res){
+        if(res.error){ showErr('err-starters', res.error.message || String(res.error)); setStatus('st-starters',''); return; }
+        starters = res.data || [];
+        el('starters-count').textContent = String(starters.length)+' regels';
+        renderStarters();
+        setStatus('st-starters','');
+      });
   }
 
   function renderStarters(){
-    const body = document.getElementById('starters-body');
-    body.innerHTML = '';
-    if (!starters.length){
-      body.innerHTML = `<tr><td colspan="6" class="empty">Geen templates</td></tr>`;
-      return;
-    }
-    starters.forEach(s => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${esc(s.sport)}</td>
-        <td>${esc(s.event)}</td>
-        <td><input style="max-width:90px" type="number" min="1" value="${s.qty}" id="qty-${s.id}"></td>
-        <td><input style="max-width:90px" type="number" step="0.1" min="0" max="10" value="${s.base_rating}" id="rat-${s.id}"></td>
-        <td><input style="min-width:220px" value='${esc(JSON.stringify(s.base_stats||{}))}' id="stats-${s.id}"></td>
-        <td class="row">
-          <button class="btn ok" onclick="updateStarter(${s.id})">Opslaan</button>
-          <button class="btn bad" onclick="deleteStarter(${s.id})">Verwijderen</button>
-        </td>
-      `;
+    var body = el('starters-body'); body.innerHTML='';
+    if(!starters.length){ body.innerHTML = '<tr><td colspan="6" class="muted">Geen templates</td></tr>'; return; }
+    for(var i=0;i<starters.length;i++){
+      var s = starters[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+esc(s.sport)+'</td>'+
+        '<td>'+esc(s.event)+'</td>'+
+        '<td><input style="max-width:90px" type="number" min="1" value="'+s.qty+'" id="qty-'+s.id+'"></td>'+
+        '<td><input style="max-width:90px" type="number" step="0.1" min="0" max="10" value="'+s.base_rating+'" id="rat-'+s.id+'"></td>'+
+        '<td><input style="min-width:220px" value=\''+esc(JSON.stringify(s.base_stats||{}))+'\' id="stats-'+s.id+'"></td>'+
+        '<td class="row">'+
+          '<button class="btn ok" onclick="updateStarter('+s.id+')">Opslaan</button>'+
+          '<button class="btn bad" onclick="deleteStarter('+s.id+')">Verwijderen</button>'+
+        '</td>';
       body.appendChild(tr);
-    });
+    }
   }
 
-  async function addStarter(){
-    try{
-      const sport = document.getElementById('st-sport').value.trim();
-      const event = document.getElementById('st-event').value.trim();
-      const qty = parseInt(document.getElementById('st-qty').value || '1', 10);
-      const base_rating = parseFloat(document.getElementById('st-rating').value || '5.0');
-      const statsTxt = document.getElementById('st-stats').value.trim() || '{}';
-      if (!sport || !event) { alert('Vul sport en onderdeel in.'); return; }
-      let base_stats = {};
-      try { base_stats = JSON.parse(statsTxt); } catch{ alert('Stats JSON is ongeldig.'); return; }
+  function addStarter(){
+    setStatus('st-starters','Toevoegen…'); showErr('err-starters','');
+    var sport = (el('st-sport').value||'').trim();
+    var ev = (el('st-event').value||'').trim();
+    var qty = parseInt(el('st-qty').value||'1',10);
+    var rating = parseFloat(el('st-rating').value||'5.0');
+    var statsTxt = el('st-stats').value||'{}';
+    if(!sport || !ev){ setStatus('st-starters',''); alert('Vul sport en onderdeel in.'); return; }
+    var stats = {};
+    try{ stats = JSON.parse(statsTxt); }catch(e){ setStatus('st-starters',''); alert('Stats JSON is ongeldig.'); return; }
 
-      const { error } = await sb.from('starter_templates').insert({ sport, event, qty, base_rating, base_stats });
-      if (error) throw error;
-
-      document.getElementById('st-sport').value = '';
-      document.getElementById('st-event').value = '';
-      document.getElementById('st-qty').value = '1';
-      document.getElementById('st-rating').value = '5.0';
-      document.getElementById('st-stats').value = '';
-
-      await loadStarters();
-    }catch(e){ alert(e.message||e); }
+    sb.from('starter_templates').insert({ sport:sport, event:ev, qty:qty, base_rating:rating, base_stats:stats })
+      .then(function(r){
+        if(r.error){ showErr('err-starters', r.error.message || String(r.error)); setStatus('st-starters',''); return; }
+        el('st-sport').value=''; el('st-event').value=''; el('st-qty').value='1'; el('st-rating').value='5.0'; el('st-stats').value='';
+        loadStarters();
+      });
   }
 
-  async function updateStarter(id){
-    try{
-      const qty = parseInt(document.getElementById(`qty-${id}`).value||'1',10);
-      const base_rating = parseFloat(document.getElementById(`rat-${id}`).value||'5.0');
-      const statsTxt = document.getElementById(`stats-${id}`).value||'{}';
-      let base_stats={}; try{ base_stats = JSON.parse(statsTxt); }catch{ alert('Stats JSON ongeldig.'); return; }
-      const { error } = await sb.from('starter_templates').update({ qty, base_rating, base_stats }).eq('id', id);
-      if (error) throw error;
-      alert('Opgeslagen!');
-    }catch(e){ alert(e.message||e); }
+  function updateStarter(id){
+    setStatus('st-starters','Opslaan…'); showErr('err-starters','');
+    var qty = parseInt(el('qty-'+id).value||'1',10);
+    var rating = parseFloat(el('rat-'+id).value||'5.0');
+    var statsTxt = el('stats-'+id).value||'{}';
+    var stats = {}; try{ stats = JSON.parse(statsTxt); }catch(e){ setStatus('st-starters',''); alert('Stats JSON ongeldig.'); return; }
+    sb.from('starter_templates').update({ qty:qty, base_rating:rating, base_stats:stats }).eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-starters', r.error.message || String(r.error)); }
+        setStatus('st-starters','Opgeslagen!'); setTimeout(function(){ setStatus('st-starters',''); }, 1100);
+        loadStarters();
+      });
   }
 
-  async function deleteStarter(id){
-    if (!confirm('Verwijderen?')) return;
-    const { error } = await sb.from('starter_templates').delete().eq('id', id);
-    if (error){ alert(error.message); return; }
-    await loadStarters();
+  function deleteStarter(id){
+    if(!confirm('Verwijderen?')) return;
+    setStatus('st-starters','Verwijderen…'); showErr('err-starters','');
+    sb.from('starter_templates').delete().eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-starters', r.error.message || String(r.error)); }
+        setStatus('st-starters',''); loadStarters();
+      });
   }
 
   // ===== Config =====
-  async function loadConfig(){
-    // We gebruiken het eerste record
-    const { data, error } = await sb.from('app_config').select('*').order('id').limit(1);
-    if (error){ console.error(error); return; }
-    const cfg = (data && data[0]) || { starting_mp: 100 };
-    document.getElementById('cfg-starting-mp').value = cfg.starting_mp ?? 100;
+  function loadConfig(){
+    setStatus('st-config','Laden…'); showErr('err-config','');
+    sb.from('app_config').select('*').order('id').limit(1)
+      .then(function(r){
+        if(r.error){ showErr('err-config', r.error.message||String(r.error)); setStatus('st-config',''); return; }
+        var cfg = (r.data && r.data[0]) ? r.data[0] : { starting_mp: 100 };
+        el('cfg-starting-mp').value = (typeof cfg.starting_mp==='number')?cfg.starting_mp:100;
+        setStatus('st-config','');
+      });
   }
 
-  async function saveConfig(){
-    const starting_mp = parseInt(document.getElementById('cfg-starting-mp').value||'100',10);
-    if (Number.isNaN(starting_mp) || starting_mp < 0){ alert('Ongeldige MP.'); return; }
-    // upsert via insert-select
-    const { error } = await sb.rpc('upsert_app_config', {}); // fallback als niet bestaat
-    // Als je die RPC niet hebt, doen we: insert als leeg, anders update eerste
-    if (error){
-      // try fallback
-      const { data } = await sb.from('app_config').select('id').order('id').limit(1);
-      if (!data || !data.length){
-        await sb.from('app_config').insert({ starting_mp });
-      }else{
-        await sb.from('app_config').update({ starting_mp }).eq('id', data[0].id);
-      }
-    } else {
-      // na RPC nog even update, voor zekerheid
-      const { data } = await sb.from('app_config').select('id').order('id').limit(1);
-      if (data && data.length){
-        await sb.from('app_config').update({ starting_mp }).eq('id', data[0].id);
-      }
-    }
-    alert('Config opgeslagen!');
+  function saveConfig(){
+    setStatus('st-config','Opslaan…'); showErr('err-config','');
+    var val = parseInt(el('cfg-starting-mp').value||'100',10);
+    if(isNaN(val) || val<0){ setStatus('st-config',''); alert('Ongeldige MP.'); return; }
+    sb.from('app_config').select('id').order('id').limit(1)
+      .then(function(r){
+        if(r.error){ showErr('err-config', r.error.message||String(r.error)); setStatus('st-config',''); return; }
+        if(!r.data || !r.data.length){
+          sb.from('app_config').insert({ starting_mp: val }).then(function(x){
+            if(x.error){ showErr('err-config', x.error.message||String(x.error)); }
+            setStatus('st-config','Opgeslagen!'); setTimeout(function(){ setStatus('st-config',''); }, 1100);
+          });
+        } else {
+          sb.from('app_config').update({ starting_mp: val }).eq('id', r.data[0].id).then(function(x){
+            if(x.error){ showErr('err-config', x.error.message||String(x.error)); }
+            setStatus('st-config','Opgeslagen!'); setTimeout(function(){ setStatus('st-config',''); }, 1100);
+          });
+        }
+      });
   }
 
   // ===== Managers =====
-  async function loadManagers(){
-    const { data, error } = await sb.from('my_profile')
-      .select('user_id,email,display_name,mp,country_id,country_name,created_at')
-      .order('created_at', { ascending: true });
-    if (error){ console.error(error); return; }
-    managers = data || [];
-    document.getElementById('managers-count').textContent = managers.length;
-    renderManagers();
+  function loadManagers(){
+    setStatus('st-managers','Laden…'); showErr('err-managers','');
+    sb.from('my_profile').select('user_id,email,display_name,mp,country_name,created_at')
+      .order('created_at',{ascending:true})
+      .then(function(r){
+        if(r.error){ showErr('err-managers', r.error.message||String(r.error)); setStatus('st-managers',''); return; }
+        managers = r.data || [];
+        el('managers-count').textContent = String(managers.length);
+        renderManagers();
+        setStatus('st-managers','');
+      });
   }
 
   function renderManagers(){
-    const q = (document.getElementById('mgr-q').value||'').toLowerCase();
-    const body = document.getElementById('managers-body');
-    body.innerHTML = '';
-    const rows = managers.filter(m =>
-      !q || (m.email||'').toLowerCase().includes(q) ||
-            (m.display_name||'').toLowerCase().includes(q) ||
-            (m.country_name||'').toLowerCase().includes(q)
-    );
-    if (!rows.length){ body.innerHTML = `<tr><td colspan="6" class="empty">Geen resultaten</td></tr>`; return; }
-    rows.forEach(m => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${esc(m.email)}</td>
-        <td><input id="mgr-name-${m.user_id}" value="${esc(m.display_name||'')}" style="min-width:160px"></td>
-        <td>${esc(m.country_name||'')}</td>
-        <td><input id="mgr-mp-${m.user_id}" type="number" value="${m.mp??0}" style="max-width:120px"></td>
-        <td class="small">${new Date(m.created_at).toLocaleString()}</td>
-        <td class="row">
-          <button class="btn ok" onclick="saveManager('${m.user_id}')">Opslaan</button>
-        </td>
-      `;
+    var q = (el('mgr-q').value||'').toLowerCase();
+    var body = el('managers-body'); body.innerHTML='';
+    var rows = [];
+    for(var i=0;i<managers.length;i++){
+      var m = managers[i];
+      if(!q || (m.email||'').toLowerCase().indexOf(q)>-1 ||
+               (m.display_name||'').toLowerCase().indexOf(q)>-1 ||
+               (m.country_name||'').toLowerCase().indexOf(q)>-1){
+        rows.push(m);
+      }
+    }
+    if(!rows.length){ body.innerHTML = '<tr><td colspan="6" class="muted">Geen resultaten</td></tr>'; return; }
+    for(i=0;i<rows.length;i++){
+      var r = rows[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+esc(r.email)+'</td>'+
+        '<td><input id="mgr-name-'+r.user_id+'" value="'+esc(r.display_name||'')+'" style="min-width:160px"></td>'+
+        '<td>'+esc(r.country_name||'')+'</td>'+
+        '<td><input id="mgr-mp-'+r.user_id+'" type="number" value="'+(typeof r.mp==='number'?r.mp:0)+'" style="max-width:120px"></td>'+
+        '<td class="muted">'+new Date(r.created_at).toLocaleString()+'</td>'+
+        '<td><button class="btn ok" onclick="saveManager(\''+r.user_id+'\')">Opslaan</button></td>';
       body.appendChild(tr);
-    });
+    }
   }
 
-  async function saveManager(user_id){
-    const display_name = document.getElementById(`mgr-name-${user_id}`).value;
-    const mp = parseInt(document.getElementById(`mgr-mp-${user_id}`).value||'0',10);
-    const { error } = await sb.from('managers').update({ display_name, mp }).eq('user_id', user_id);
-    if (error){ alert(error.message); return; }
-    alert('Manager opgeslagen.');
-    await loadManagers();
+  function saveManager(user_id){
+    setStatus('st-managers','Opslaan…'); showErr('err-managers','');
+    var display_name = el('mgr-name-'+user_id).value;
+    var mp = parseInt(el('mgr-mp-'+user_id).value||'0',10);
+    sb.from('managers').update({ display_name: display_name, mp: mp }).eq('user_id', user_id)
+      .then(function(r){
+        if(r.error){ showErr('err-managers', r.error.message||String(r.error)); setStatus('st-managers',''); return; }
+        setStatus('st-managers','Opgeslagen!'); setTimeout(function(){ setStatus('st-managers',''); }, 1100);
+        loadManagers();
+      });
   }
 
   // ===== Athletes =====
-  async function loadAthletes(){
-    // join met managers? we hebben alleen RLS-admin; pak aparte queries
-    const { data: ath, error } = await sb.from('athletes').select('id,manager_id,country_id,sport,event,rating,active,created_at').order('created_at', { ascending: false }).limit(500);
-    if (error){ console.error(error); return; }
-    athletes = ath || [];
-
-    // map manager emails:
-    const ids = [...new Set(athletes.map(a => a.manager_id))];
-    let emailById = {};
-    if (ids.length){
-      const { data: profs } = await sb.from('managers').select('user_id,email').in('user_id', ids);
-      (profs||[]).forEach(p => emailById[p.user_id]=p.email);
-    }
-    athletes.forEach(a => a.manager_email = emailById[a.manager_id] || a.manager_id);
-    document.getElementById('ath-count').textContent = athletes.length;
-    renderAthletes();
+  function loadAthletes(){
+    setStatus('st-athletes','Laden…'); showErr('err-athletes','');
+    sb.from('athletes').select('id,manager_id,sport,event,rating,active,created_at').order('created_at',{ascending:false}).limit(500)
+      .then(function(r){
+        if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); setStatus('st-athletes',''); return; }
+        athletes = r.data || [];
+        // emails mappen
+        var ids = {}, list = [], i;
+        for(i=0;i<athletes.length;i++){ var mid = athletes[i].manager_id; if(mid && !ids[mid]){ ids[mid]=1; list.push(mid); } }
+        if(!list.length){ el('ath-count').textContent='0'; renderAthletes(); setStatus('st-athletes',''); return; }
+        sb.from('managers').select('user_id,email').in('user_id', list)
+          .then(function(mx){
+            var map = {}; if(mx.data){ for(i=0;i<mx.data.length;i++){ map[mx.data[i].user_id] = mx.data[i].email; } }
+            for(i=0;i<athletes.length;i++){ athletes[i].manager_email = map[athletes[i].manager_id] || athletes[i].manager_id; }
+            el('ath-count').textContent = String(athletes.length);
+            renderAthletes();
+            setStatus('st-athletes','');
+          });
+      });
   }
 
   function renderAthletes(){
-    const q = (document.getElementById('ath-q').value||'').toLowerCase();
-    const body = document.getElementById('ath-body');
-    body.innerHTML = '';
-    const rows = athletes.filter(a =>
-      !q || (a.sport||'').toLowerCase().includes(q) ||
-            (a.event||'').toLowerCase().includes(q) ||
-            (a.manager_email||'').toLowerCase().includes(q)
-    );
-    if (!rows.length){ body.innerHTML = `<tr><td colspan="7" class="empty">Geen resultaten</td></tr>`; return; }
-    rows.forEach(a => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="small">${esc(a.manager_email)}</td>
-        <td>${esc(a.sport)}</td>
-        <td>${esc(a.event)}</td>
-        <td>${Number(a.rating??0).toFixed(1)}</td>
-        <td>${a.active ? 'Actief' : 'Inactief'}</td>
-        <td class="small">${new Date(a.created_at).toLocaleString()}</td>
-        <td class="row">
-          <button class="btn" onclick="toggleAthlete('${a.id}', ${a.active? 'false':'true'})">${a.active ? 'Deactiveer' : 'Activeer'}</button>
-          <button class="btn bad" onclick="deleteAthlete('${a.id}')">Verwijderen</button>
-        </td>
-      `;
+    var q = (el('ath-q').value||'').toLowerCase();
+    var body = el('ath-body'); body.innerHTML='';
+    var rows = [], i;
+    for(i=0;i<athletes.length;i++){
+      var a = athletes[i];
+      if(!q || (a.sport||'').toLowerCase().indexOf(q)>-1 ||
+               (a.event||'').toLowerCase().indexOf(q)>-1 ||
+               (a.manager_email||'').toLowerCase().indexOf(q)>-1){
+        rows.push(a);
+      }
+    }
+    if(!rows.length){ body.innerHTML = '<tr><td colspan="7" class="muted">Geen resultaten</td></tr>'; return; }
+    for(i=0;i<rows.length;i++){
+      var r = rows[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="muted">'+esc(r.manager_email||'')+'</td>'+
+        '<td>'+esc(r.sport||'')+'</td>'+
+        '<td>'+esc(r.event||'')+'</td>'+
+        '<td>'+Number(r.rating||0).toFixed(1)+'</td>'+
+        '<td>'+(r.active ? 'Actief' : 'Inactief')+'</td>'+
+        '<td class="muted">'+new Date(r.created_at).toLocaleString()+'</td>'+
+        '<td class="row">'+
+          '<button class="btn" onclick="toggleAthlete(\''+r.id+'\','+(!r.active)+')">'+(r.active?'Deactiveer':'Activeer')+'</button>'+
+          '<button class="btn bad" onclick="deleteAthlete(\''+r.id+'\')">Verwijderen</button>'+
+        '</td>';
       body.appendChild(tr);
-    });
+    }
   }
 
-  async function toggleAthlete(id, active){
-    const { error } = await sb.from('athletes').update({ active }).eq('id', id);
-    if (error){ alert(error.message); return; }
-    await loadAthletes();
+  function toggleAthlete(id, active){
+    setStatus('st-athletes','Bijwerken…'); showErr('err-athletes','');
+    sb.from('athletes').update({ active: active }).eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); }
+        setStatus('st-athletes',''); loadAthletes();
+      });
   }
 
-  async function deleteAthlete(id){
-    if (!confirm('Atleet verwijderen?')) return;
-    const { error } = await sb.from('athletes').delete().eq('id', id);
-    if (error){ alert(error.message); return; }
-    await loadAthletes();
+  function deleteAthlete(id){
+    if(!confirm('Atleet verwijderen?')) return;
+    setStatus('st-athletes','Verwijderen…'); showErr('err-athletes','');
+    sb.from('athletes').delete().eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); }
+        setStatus('st-athletes',''); loadAthletes();
+      });
   }
 
-  // ===== Helpers =====
-  function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  async function logout(){ await sb.auth.signOut(); window.location.href='index.html'; }
-
-  // ===== Boot =====
-  sb.auth.onAuthStateChange((_e, _s) => init());
-  init();
-  async function init(){
-    const ok = await ensureAdmin();
-    if (!ok) return;
-    await refreshAll();
-  }
-
-  // Optional RPC fallback (niet verplicht, maar handig als je later een nette upsert wilt)
-  // create or replace function public.upsert_app_config()
-  // returns void language plpgsql as $$
-  // begin
-  //   if not exists (select 1 from app_config) then
-  //     insert into app_config (starting_mp) values (100);
-  //   end if;
-  // end; $$;
+  // ===== util =====
+  function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 </script>
 </body>
 </html>
