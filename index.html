@@ -20,6 +20,7 @@
     .links a{color:#fff;text-decoration:none;padding:8px 12px;background:#ffffff1a;border-radius:10px}
     .links a:hover{background:#ffffff2a}
     .status{margin-top:8px;font-size:.9rem;color:var(--muted);min-height:1.2em;white-space:pre-line}
+    .note{font-size:.85rem;color:#ffffffc7;margin-top:6px}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -39,6 +40,10 @@
     <button onclick="signup()">Registreren</button>
 
     <div class="status" id="status"></div>
+    <div class="note">
+      Tip: test via een echte URL (bv. GitHub Pages of <code>http://localhost</code>),<br/>
+      en zet tijdelijk e-mailbevestiging <b>uit</b> in Supabase om sneller te testen.
+    </div>
   </div>
 
   <div class="container hidden" id="profile-section">
@@ -56,55 +61,64 @@
   </div>
 
   <script>
-    // ===== Supabase client =====
-    if (!window.supabase) {
-      alert("Kon Supabase library niet laden. Controleer internet/adblock.");
-    }
+    if (!window.supabase) alert("Kon Supabase library niet laden. Controleer internet/adblock.");
+
     const SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
     const ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ===== Kleine helpers =====
     const el = (id) => document.getElementById(id);
     const $auth = el('auth-section');
     const $profile = el('profile-section');
     const $adminLink = el('admin-link');
-    const setStatus   = (msg) => el('status').textContent = msg || '';
-    const setStatusIn = (msg) => el('status-in').textContent = msg || '';
+    const setStatus   = (m) => el('status').textContent = m || '';
+    const setStatusIn = (m) => el('status-in').textContent = m || '';
 
     function showAuth(){ $auth.classList.remove('hidden'); $profile.classList.add('hidden'); }
     function showProfile(){ $auth.classList.add('hidden'); $profile.classList.remove('hidden'); }
 
-    // ===== Signup/Login/Logout =====
+    let pollTimer = null;
+    function startSessionPoll(hintMsg){
+      clearInterval(pollTimer);
+      let tries = 0;
+      setStatus(hintMsg || "Wachten op bevestiging/sessie…");
+      pollTimer = setInterval(async () => {
+        tries++;
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+          clearInterval(pollTimer);
+          await afterSignedIn(session);
+        } else if (tries % 5 === 0) {
+          // elke ~10s weer een hint
+          setStatus(hintMsg || "Nog geen sessie. Bevestig je e-mail of probeer opnieuw in te loggen…");
+        }
+      }, 2000);
+    }
+
     async function signup() {
       try {
         setStatus("Registreren…");
         const name = el('signup-name').value.trim();
         const email = el('signup-email').value.trim();
         const password = el('signup-password').value;
+        if (!name || !email || !password) { setStatus("Vul alle velden in."); return; }
 
-        if (!name || !email || !password) {
-          setStatus("Vul alle velden in.");
-          return;
-        }
-
-        const { data, error } = await sb.auth.signUp({
+        const { error } = await sb.auth.signUp({
           email, password, options: { emailRedirectTo: window.location.href }
         });
         if (error) throw error;
 
-        // Als email confirmation UIT staat heb je direct een sessie:
-        const { data: s } = await sb.auth.getSession();
-        if (s?.session) {
-          await safeInitManager(s.session.user.id, name);
-          await loadProfile();
-          setStatus("");
-          alert("Account aangemaakt! Je bent ingelogd.");
-        } else {
-          setStatus("Account aangemaakt. Check je e-mail voor bevestiging.");
-          alert("Account aangemaakt! Check je e-mail voor bevestiging.");
+        // Probeer direct in te loggen (werkt als confirmatie uit staat)
+        const { error: liErr } = await sb.auth.signInWithPassword({ email, password });
+        if (!liErr) {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session) return afterSignedIn(session);
         }
+
+        // Val terug op poll: na e-mailbevestiging komt sessie binnen
+        setStatus("Account aangemaakt. Check je e-mail om te bevestigen. De pagina detecteert je sessie automatisch zodra je terugkomt.");
+        startSessionPoll("Account aangemaakt. Wachten op e-mailbevestiging/sessie…");
       } catch (e) {
         console.error(e);
         setStatus("Fout bij registreren: " + (e?.message || e));
@@ -117,16 +131,16 @@
         setStatus("Inloggen…");
         const email = el('login-email').value.trim();
         const password = el('login-password').value;
-        if (!email || !password) {
-          setStatus("Vul e-mail en wachtwoord in.");
-          return;
-        }
+        if (!email || !password) { setStatus("Vul e-mail en wachtwoord in."); return; }
 
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        setStatus("");
-        await loadProfile();
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) return afterSignedIn(session);
+
+        // Als we hier komen is er nog geen sessie (bv. vanwege confirmatie)
+        startSessionPoll("Inloggen gelukt, wacht op sessie (mogelijk e-mailbevestiging vereist) …");
       } catch (e) {
         console.error(e);
         setStatus("Fout bij inloggen: " + (e?.message || e));
@@ -134,19 +148,28 @@
       }
     }
 
+    async function afterSignedIn(session){
+      // Init manager (alleen bij eerste keer)
+      try {
+        const typedName = el('signup-name')?.value?.trim();
+        await safeInitManager(session.user.id, typedName || session.user.email.split('@')[0]);
+      } catch(e){ console.warn(e); }
+      setStatus("");
+      await loadProfile();
+    }
+
     async function logout() {
       await sb.auth.signOut();
       showAuth();
       setStatus("Je bent uitgelogd.");
       setStatusIn("");
+      clearInterval(pollTimer);
     }
 
-    // ===== Init manager alleen als nog niet bestaat =====
     async function safeInitManager(userId, displayName) {
       try {
-        const { data: existing, error: profErr } = await sb
+        const { data: existing } = await sb
           .from('my_profile').select('user_id').eq('user_id', userId).maybeSingle();
-        if (profErr) console.warn('Profiel check:', profErr);
         if (existing) return;
         const { error } = await sb.rpc('init_manager', {
           p_user_id: userId, p_display_name: displayName || 'Manager'
@@ -158,7 +181,6 @@
       }
     }
 
-    // ===== Profiel laden =====
     async function loadProfile() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { showAuth(); return; }
@@ -190,19 +212,17 @@
       showProfile();
     }
 
-    // ===== Sessiewissels: na login/confirm => init + profiel =====
+    // Detecteer sessie van redirect (bij e-mailbevestiging)
     sb.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        const typedName = el('signup-name')?.value?.trim();
-        await safeInitManager(session.user.id, typedName || session.user.email.split('@')[0]);
-        await loadProfile();
-      } else {
-        showAuth();
+        clearInterval(pollTimer);
+        await afterSignedIn(session);
       }
     });
 
-    // ===== Bij eerste load: toon evt. bestaand profiel =====
+    // Als al ingelogd, toon profiel
     loadProfile();
   </script>
 </body>
 </html>
+
