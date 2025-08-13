@@ -9,7 +9,7 @@
     header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
     header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
     header a:hover, header button:hover{background:#ffffff2a}
-    .wrap{max-width:1250px;margin:20px auto;padding:0 14px}
+    .wrap{max-width:1320px;margin:20px auto;padding:0 14px}
     .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
     .tab{padding:8px 12px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff22;cursor:pointer}
     .tab.active{background:#e63946}
@@ -30,7 +30,7 @@
     .grid2{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px}
     .grid3{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px}
     .grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}
-    @media(max-width:900px){.grid4,.grid3,.grid2{display:block}}
+    @media(max-width:1020px){.grid4,.grid3,.grid2{display:block}}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -60,6 +60,8 @@
   <div id="app" style="display:none">
     <div class="tabs">
       <button class="tab active" data-tab="countries" onclick="showTab('countries', this)">Landen</button>
+      <button class="tab" data-tab="units" onclick="showTab('units', this)">Onderdeelbeheer</button>
+      <button class="tab" data-tab="formats" onclick="showTab('formats', this)">Format & Ronden</button>
       <button class="tab" data-tab="starters" onclick="showTab('starters', this)">Starter-templates</button>
       <button class="tab" data-tab="config" onclick="showTab('config', this)">Config</button>
       <button class="tab" data-tab="managers" onclick="showTab('managers', this)">Managers</button>
@@ -85,19 +87,148 @@
       <div class="errorbox" id="err-countries"></div>
     </section>
 
-    <!-- STARTER TEMPLATES (nu met Sport->Discipline->Event dropdowns) -->
+    <!-- ONDERDEELBEHEER -->
+    <section class="card" id="tab-units" style="display:none">
+      <div class="row">
+        <h2 style="margin:0">Onderdeelbeheer</h2>
+        <span class="pill" id="unit-summary">–</span>
+      </div>
+
+      <div class="hint" style="margin:6px 0 10px">
+        Vul <b>Sport</b> in, eventueel een <b>Discipline (optioneel)</b>, en vervolgens het <b>Event/Onderdeel</b>.  
+        Je kunt een nieuwe sport/disciplines <u>aanmaken</u> of bestaande kiezen. Laat je discipline leeg, dan maken we automatisch <b>(algemeen)</b>.  
+        Stel ook <b>Max. aantal deelnemers (totaal)</b> in.
+      </div>
+
+      <div class="grid4" style="margin-bottom:8px">
+        <div>
+          <label>Sport (nieuw of kies bestaande)</label>
+          <input id="u-sport-name" placeholder="bv. Atletiek" oninput="matchExistingSport()">
+          <select id="u-sport-select" onchange="pickExistingSport()" style="margin-top:6px"></select>
+        </div>
+        <div>
+          <label>Discipline (optioneel)</label>
+          <input id="u-disc-name" placeholder="bv. Sprint (optioneel)" oninput="matchExistingDisc()">
+          <select id="u-disc-select" onchange="pickExistingDisc()" style="margin-top:6px"></select>
+        </div>
+        <div>
+          <label>Event / Onderdeel</label>
+          <input id="u-event-name" placeholder="bv. 100m">
+        </div>
+        <div>
+          <label>Geslacht</label>
+          <select id="u-gender">
+            <option value="M">M</option>
+            <option value="V">V</option>
+            <option value="X">X</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid3" style="margin-bottom:8px">
+        <div><label>Max. deelnemers (totaal)</label><input id="u-max-total" type="number" min="1" placeholder="bijv. 24"></div>
+        <div><label>Actief</label>
+          <select id="u-active"><option value="true" selected>Ja</option><option value="false">Nee</option></select>
+        </div>
+        <div style="align-self:end"><button class="btn ok" onclick="createEvent()">Onderdeel aanmaken</button></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card" style="background:#ffffff08">
+          <h3 style="margin-top:0">Sporten</h3>
+          <table><thead><tr><th>Sport</th><th>Acties</th></tr></thead><tbody id="tbl-sports"><tr><td colspan="2" class="muted">Laden…</td></tr></tbody></table>
+          <div class="status" id="st-sports"></div><div class="errorbox" id="err-sports"></div>
+        </div>
+        <div class="card" style="background:#ffffff08">
+          <h3 style="margin-top:0">Disciplines</h3>
+          <table><thead><tr><th>Discipline</th><th>Sport</th><th>Acties</th></tr></thead><tbody id="tbl-discs"><tr><td colspan="3" class="muted">Laden…</td></tr></tbody></table>
+          <div class="status" id="st-discs"></div><div class="errorbox" id="err-discs"></div>
+        </div>
+      </div>
+
+      <div class="card" style="background:#ffffff08">
+        <h3 style="margin-top:0">Events / Onderdelen</h3>
+        <div class="row" style="margin-bottom:6px">
+          <input id="u-q" placeholder="Zoek op sport/discipline/event" oninput="renderEvents()" style="flex:1;min-width:220px">
+          <span class="pill" id="ev-count">0</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Sport</th><th>Discipline</th><th>Event</th><th>Geslacht</th><th>Actief</th><th>Max totaal</th><th>Acties</th>
+          </tr></thead>
+          <tbody id="tbl-events"><tr><td colspan="7" class="muted">Laden…</td></tr></tbody>
+        </table>
+        <div class="status" id="st-events"></div><div class="errorbox" id="err-events"></div>
+      </div>
+    </section>
+
+    <!-- FORMAT & RONDEN -->
+    <section class="card" id="tab-formats" style="display:none">
+      <div class="row">
+        <h2 style="margin:0">Format & Ronden</h2>
+        <span class="pill" id="rounds-summary">–</span>
+      </div>
+
+      <div class="grid4" style="margin-bottom:8px">
+        <div>
+          <label>Event</label>
+          <select id="fr-event"></select>
+        </div>
+        <div>
+          <label>Template</label>
+          <select id="fr-template"></select>
+        </div>
+        <div>
+          <label>Finaledag (≥ 1)</label>
+          <input id="fr-final-day" type="number" min="1" value="6">
+        </div>
+        <div>
+          <label>Blokken (volgorde)</label>
+          <input id="fr-blocks" value="Ochtend,Middag,Avond" placeholder="Ochtend,Middag,Avond">
+        </div>
+      </div>
+
+      <div class="grid3" style="margin-bottom:8px">
+        <div>
+          <label>Venue (optioneel)</label>
+          <select id="fr-venue"></select>
+        </div>
+        <div style="align-self:end">
+          <button class="btn ok" onclick="applyTemplate()">Rondes aanmaken</button>
+        </div>
+        <div style="align-self:end">
+          <button class="btn" onclick="loadRounds()">Rondes laden</button>
+        </div>
+      </div>
+
+      <div class="card" style="background:#ffffff08">
+        <h3 style="margin-top:0">Rondes voor gekozen event</h3>
+        <table>
+          <thead><tr><th>#</th><th>Naam</th><th>Label</th><th>Dag</th><th>Blok</th><th>Venue</th><th>Acties</th></tr></thead>
+          <tbody id="tbl-rounds"><tr><td colspan="7" class="muted">Kies een event en klik “Rondes laden”.</td></tr></tbody>
+        </table>
+        <div class="status" id="st-rounds"></div><div class="errorbox" id="err-rounds"></div>
+      </div>
+
+      <div class="card" style="background:#ffffff08">
+        <h3 style="margin-top:0">Test-simulatie</h3>
+        <div class="row" style="margin-bottom:6px">
+          <select id="sim-event"></select>
+          <button class="btn" onclick="runSim()">Simuleer (test)</button>
+        </div>
+        <textarea id="sim-out" rows="6" readonly placeholder="Resultaat JSON verschijnt hier…"></textarea>
+      </div>
+    </section>
+
+    <!-- STARTER TEMPLATES (Event dropdowns) -->
     <section class="card" id="tab-starters" style="display:none">
       <div class="row">
         <h2 style="margin:0">Starter-templates</h2>
         <span class="pill" id="starters-count">0 regels</span>
       </div>
-
       <div class="hint" style="margin:6px 0 10px">
-        Kies een **Event** uit je Onderdeelbeheer. Bij het aanmaken van nieuwe managers krijgen ze starters met
-        <b>random rating</b> en een **verborgen groeicap** (potentieel). <br/>
-        <span class="muted">De velden “Rating” en “Stats” gelden als basis; rating wordt in jouw setup vervangen door random binnen de ingestelde range.</span>
+        Kies een <b>Event</b> uit Onderdeelbeheer. Rating van starters is bij jou <b>random</b> binnen de range; <b>Stats</b> zijn optioneel.
       </div>
-
       <div class="grid4" style="margin-bottom:10px">
         <div>
           <label>Sport</label>
@@ -108,7 +239,7 @@
           <select id="st-disc" onchange="fillEventsForStarters();"></select>
         </div>
         <div>
-          <label>Event (onderdeel)</label>
+          <label>Event</label>
           <select id="st-event"></select>
         </div>
         <div>
@@ -116,17 +247,15 @@
           <input id="st-qty" type="number" min="1" value="1">
         </div>
       </div>
-
       <div class="grid2" style="margin-bottom:8px">
         <div>
-          <label>Stats JSON (bijv. {"speed":70})</label>
+          <label>Stats JSON</label>
           <input id="st-stats" placeholder='{"speed":70,"endurance":50}'>
         </div>
         <div style="align-self:end">
           <button class="btn ok" onclick="addStarter()">Toevoegen</button>
         </div>
       </div>
-
       <table>
         <thead><tr><th>Sport</th><th>Discipline</th><th>Event</th><th>Aantal</th><th>Stats</th><th>Acties</th></tr></thead>
         <tbody id="starters-body"><tr><td colspan="6" class="muted">Laden…</td></tr></tbody>
@@ -135,10 +264,9 @@
       <div class="errorbox" id="err-starters"></div>
     </section>
 
-    <!-- CONFIG (MP-kosten + rating/potentieel ranges + Starting MP) -->
+    <!-- CONFIG -->
     <section class="card" id="tab-config" style="display:none">
       <h2 style="margin:0">Configuratie</h2>
-
       <div class="card" style="background:#ffffff08">
         <h3 style="margin-top:0">MP & Kosten</h3>
         <div class="grid3">
@@ -147,7 +275,6 @@
           <div><label>Kosten scouten (scout_cost)</label><input id="cfg-scout-cost" type="number" min="0" value="20"></div>
         </div>
       </div>
-
       <div class="card" style="background:#ffffff08">
         <h3 style="margin-top:0">Random rating & potentieel (Starters)</h3>
         <div class="grid4">
@@ -157,7 +284,6 @@
           <div><label>starter_potential_delta_max</label><input id="cfg-starter-dmax" type="number" step="0.1" value="4"></div>
         </div>
       </div>
-
       <div class="card" style="background:#ffffff08">
         <h3 style="margin-top:0">Random rating & potentieel (Scouten)</h3>
         <div class="grid4">
@@ -167,7 +293,6 @@
           <div><label>scout_potential_delta_max</label><input id="cfg-scout-dmax" type="number" step="0.1" value="4"></div>
         </div>
       </div>
-
       <div class="row" style="margin-top:6px">
         <button class="btn ok" onclick="saveConfig()">Opslaan</button>
       </div>
@@ -217,16 +342,17 @@
 
   // ===== state =====
   var sessionUser = null;
-  var countries=[], starters=[], managers=[], athletes=[];
-  var sports=[], disciplines=[], events=[];
-  var startersMap = {discBySport:{}, evByDisc:{}};
+  var countries=[], managers=[], athletes=[];
+  var sports=[], disciplines=[], events=[], templates=[], venues=[];
+  var starters=[], startersMap={discBySport:{}, evByDisc:{}};
+  var roundsForEvent=[];
 
   // ===== helpers =====
   function el(id){ return document.getElementById(id); }
   function setStatus(id, t){ el(id).textContent = t || ''; }
   function showErr(id, msg){ var b = el(id); b.style.display = msg ? 'block' : 'none'; b.textContent = msg || ''; }
   function showTab(name, btn){
-    var tabs = ['countries','starters','config','managers','athletes'], i;
+    var tabs = ['countries','units','formats','starters','config','managers','athletes'], i;
     for(i=0;i<tabs.length;i++){ el('tab-'+tabs[i]).style.display = (tabs[i]===name)?'':'none'; }
     var btns = document.getElementsByClassName('tab');
     for(i=0;i<btns.length;i++){ btns[i].classList.remove('active'); }
@@ -235,6 +361,7 @@
   function showAuth(){ el('auth-warning').style.display=''; el('no-admin').style.display='none'; el('app').style.display='none'; }
   function showNoAdmin(){ el('auth-warning').style.display='none'; el('no-admin').style.display=''; el('app').style.display='none'; }
   function showApp(){ el('auth-warning').style.display='none'; el('no-admin').style.display='none'; el('app').style.display=''; }
+  function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
   // ===== boot =====
   sb.auth.onAuthStateChange(function(_e, session){ if(session){ init(); } else { showAuth(); } });
@@ -245,35 +372,35 @@
       sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
       if (!sessionUser){ showAuth(); return; }
       if (!sessionUser.email || sessionUser.email.toLowerCase() !== ADMIN_EMAIL){ showNoAdmin(); return; }
-      showApp();
-      refreshAll();
+      showApp(); refreshAll();
     });
   }
 
   function refreshAll(){
     loadCountries();
+    loadUnits();   // sports/disciplines/events + counters
+    loadFormats(); // templates + venues + event lists
     loadStarters();
     loadManagers();
     loadAthletes();
-    loadTaxonomy(); // sports/disciplines/events for starters dropdowns
     loadConfig();
   }
 
   function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
 
-  // ===== Countries =====
+  /* =======================
+   * LANDEN
+   * ======================= */
   function loadCountries(){
     setStatus('st-countries','Laden…'); showErr('err-countries','');
-    sb.from('countries').select('id,name,code,order_index,assigned_to,assigned_at').order('order_index')
+    sb.from('countries').select('id,name,code,order_index,assigned_to').order('order_index')
       .then(function(res){
         if(res.error){ showErr('err-countries', res.error.message || String(res.error)); setStatus('st-countries',''); return; }
         countries = res.data || [];
         el('country-count').textContent = String(countries.length)+' landen';
-        renderCountries();
-        setStatus('st-countries','');
+        renderCountries(); setStatus('st-countries','');
       });
   }
-
   function renderCountries(){
     var body = el('countries-body'); body.innerHTML='';
     if(!countries.length){ body.innerHTML = '<tr><td colspan="5" class="muted">Geen landen</td></tr>'; return; }
@@ -340,87 +467,373 @@
       });
   }
 
-  // ===== Taxonomy (sports/disciplines/events) for Starter dropdowns =====
-  function loadTaxonomy(){
+  /* =======================
+   * ONDERDEELBEHEER
+   * ======================= */
+  function loadUnits(){
+    setStatus('st-sports','Laden…'); setStatus('st-discs',''); setStatus('st-events',''); showErr('err-sports',''); showErr('err-discs',''); showErr('err-events','');
     Promise.all([
       sb.from('sports').select('id,name').order('name'),
       sb.from('disciplines').select('id,name,sport_id').order('name'),
-      sb.from('events').select('id,name,discipline_id,gender,is_active').eq('is_active', true).order('name')
+      sb.from('events').select('id,name,discipline_id,gender,is_active,max_athletes_total').order('name')
     ]).then(function(arr){
-      var sp = arr[0], di = arr[1], ev = arr[2];
-      if(sp.error || di.error || ev.error){
-        showErr('err-starters', (sp.error&&sp.error.message)||(di.error&&di.error.message)||(ev.error&&ev.error.message));
-        return;
-      }
-      sports = sp.data||[]; disciplines = di.data||[]; events = ev.data||[];
-      // build maps
-      startersMap.discBySport = {}; startersMap.evByDisc = {};
-      var i;
-      for(i=0;i<disciplines.length;i++){
-        var d = disciplines[i];
-        if(!startersMap.discBySport[d.sport_id]) startersMap.discBySport[d.sport_id] = [];
-        startersMap.discBySport[d.sport_id].push(d);
-      }
-      for(i=0;i<events.length;i++){
-        var e = events[i];
-        if(!startersMap.evByDisc[e.discipline_id]) startersMap.evByDisc[e.discipline_id] = [];
-        startersMap.evByDisc[e.discipline_id].push(e);
-      }
-      fillSportsForStarters();
+      var sp=arr[0], di=arr[1], ev=arr[2];
+      if(sp.error){ showErr('err-sports', sp.error.message||String(sp.error)); return; }
+      if(di.error){ showErr('err-discs', di.error.message||String(di.error)); return; }
+      if(ev.error){ showErr('err-events', ev.error.message||String(ev.error)); return; }
+      sports=sp.data||[]; disciplines=di.data||[]; events=ev.data||[];
+      el('unit-summary').textContent = sports.length+' sporten • '+disciplines.length+' disciplines • '+events.length+' events';
+      fillUnitSelectors();
+      renderSports(); renderDiscs(); renderEvents();
+      setStatus('st-sports','');
+    });
+  }
+  function fillUnitSelectors(){
+    // sport dropdowns
+    var s = el('u-sport-select'); s.innerHTML=''; var o=document.createElement('option'); o.value=''; o.textContent='— kies bestaande sport —'; s.appendChild(o);
+    for(var i=0;i<sports.length;i++){ var opt=document.createElement('option'); opt.value=sports[i].id; opt.textContent=sports[i].name; s.appendChild(opt); }
+
+    // discipline dropdowns leeg; gevuld na sportkeuze
+    var d = el('u-disc-select'); d.innerHTML=''; var o2=document.createElement('option'); o2.value=''; o2.textContent='(geen / algemeen)'; d.appendChild(o2);
+  }
+  function matchExistingSport(){
+    var v=(el('u-sport-name').value||'').toLowerCase();
+    var s=el('u-sport-select'); for(var i=0;i<s.options.length;i++){ if(i===0) continue; if((s.options[i].textContent||'').toLowerCase()===v){ s.selectedIndex=i; pickExistingSport(); return; } }
+  }
+  function pickExistingSport(){
+    var id=parseInt(el('u-sport-select').value||'0',10);
+    var d = el('u-disc-select'); d.innerHTML=''; var o2=document.createElement('option'); o2.value=''; o2.textContent='(geen / algemeen)'; d.appendChild(o2);
+    if(!id) return;
+    for(var i=0;i<disciplines.length;i++){ if(disciplines[i].sport_id===id){ var o=document.createElement('option'); o.value=disciplines[i].id; o.textContent=disciplines[i].name; d.appendChild(o); } }
+    // Vul sportnaam input met het gekozen label (handig)
+    var sp=findSportById(id); if(sp){ el('u-sport-name').value = sp.name; }
+  }
+  function matchExistingDisc(){
+    var v=(el('u-disc-name').value||'').toLowerCase();
+    var d=el('u-disc-select'); for(var i=0;i<d.options.length;i++){ if((d.options[i].textContent||'').toLowerCase()===v){ d.selectedIndex=i; return; } }
+  }
+  function createEvent(){
+    var sportName=(el('u-sport-name').value||'').trim();
+    var sportSel = parseInt(el('u-sport-select').value||'0',10);
+    var discName =(el('u-disc-name').value||'').trim();
+    var discSel  = el('u-disc-select').value ? parseInt(el('u-disc-select').value,10) : null;
+    var evName   =(el('u-event-name').value||'').trim();
+    var gender   = el('u-gender').value||'M';
+    var maxTot   = el('u-max-total').value ? parseInt(el('u-max-total').value,10) : null;
+    var active   = el('u-active').value==='true';
+
+    if(!sportName && !sportSel){ alert('Vul een sportnaam in of kies een sport.'); return; }
+    if(!evName){ alert('Vul een event/onderdeel in.'); return; }
+
+    setStatus('st-events','Bezig…'); showErr('err-events','');
+
+    // 1) sport id bepalen (bestaand of nieuw)
+    var p = Promise.resolve(sportSel);
+    if(!sportSel){
+      p = sb.from('sports').insert({name:sportName}).select('id').single().then(function(r){
+        if(r.error){ showErr('err-events', r.error.message||String(r.error)); throw r.error; }
+        sports.push({id:r.data.id,name:sportName});
+        fillUnitSelectors(); return r.data.id;
+      });
+    }
+
+    p.then(function(sportId){
+      // 2) discipline id (optioneel). Als leeg, maak of hergebruik "(algemeen)"
+      if(discSel){ return discSel; }
+
+      var wantName = discName || '(algemeen)';
+      // zoek bestaande
+      for(var i=0;i<disciplines.length;i++){ if(disciplines[i].sport_id===sportId && disciplines[i].name.toLowerCase()===wantName.toLowerCase()){ return disciplines[i].id; } }
+      // maak nieuw
+      return sb.from('disciplines').insert({sport_id:sportId, name:wantName}).select('id').single().then(function(r){
+        if(r.error){ showErr('err-events', r.error.message||String(r.error)); throw r.error; }
+        disciplines.push({id:r.data.id, sport_id:sportId, name:wantName});
+        pickExistingSport(); return r.data.id;
+      });
+    }).then(function(discId){
+      // 3) event aanmaken
+      return sb.from('events').insert({
+        discipline_id: discId,
+        name: evName,
+        gender: gender,
+        is_active: active,
+        max_athletes_total: maxTot
+      }).select('id').single();
+    }).then(function(r){
+      if(r.error){ showErr('err-events', r.error.message||String(r.error)); return; }
+      el('u-event-name').value=''; el('u-max-total').value=''; el('u-disc-name').value='';
+      loadUnits(); setStatus('st-events','Aangemaakt!');
+      setTimeout(function(){ setStatus('st-events',''); }, 1200);
+    }).catch(function(e){
+      showErr('err-events', e && e.message ? e.message : String(e));
     });
   }
 
-  function fillSportsForStarters(){
-    var s = el('st-sport'); s.innerHTML = '';
-    var opt = document.createElement('option'); opt.value=''; opt.textContent='— kies sport —'; s.appendChild(opt);
-    for(var i=0;i<sports.length;i++){ var o=document.createElement('option'); o.value=sports[i].id; o.textContent=sports[i].name; s.appendChild(o); }
-    fillDisciplinesForStarters(); fillEventsForStarters();
+  function renderSports(){
+    var body = el('tbl-sports'); body.innerHTML='';
+    if(!sports.length){ body.innerHTML='<tr><td colspan="2" class="muted">Geen sporten</td></tr>'; return; }
+    for(var i=0;i<sports.length;i++){
+      var s=sports[i], tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(s.name)+'</td>'+
+                   '<td><button class="btn bad" onclick="deleteSport('+s.id+')">Verwijderen</button></td>';
+      body.appendChild(tr);
+    }
   }
-  function fillDisciplinesForStarters(){
-    var sportId = parseInt(el('st-sport').value||'0',10);
-    var dsel = el('st-disc'); dsel.innerHTML='';
-    var any = document.createElement('option'); any.value=''; any.textContent='(geen / algemeen)'; dsel.appendChild(any);
-    var list = startersMap.discBySport[sportId] || [];
-    for(var i=0;i<list.length;i++){ var o=document.createElement('option'); o.value=list[i].id; o.textContent=list[i].name; dsel.appendChild(o); }
+  function renderDiscs(){
+    var body = el('tbl-discs'); body.innerHTML='';
+    if(!disciplines.length){ body.innerHTML='<tr><td colspan="3" class="muted">Geen disciplines</td></tr>'; return; }
+    for(var i=0;i<disciplines.length;i++){
+      var d=disciplines[i], sp=findSportById(d.sport_id), tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(d.name)+'</td><td>'+esc(sp?sp.name:'')+'</td>'+
+                   '<td><button class="btn bad" onclick="deleteDisc('+d.id+')">Verwijderen</button></td>';
+      body.appendChild(tr);
+    }
   }
-  function fillEventsForStarters(){
-    var discId = el('st-disc').value;
-    var sportId = parseInt(el('st-sport').value||'0',10);
-    var evSel = el('st-event'); evSel.innerHTML='';
-    var evs = [];
-    if(discId){
-      evs = startersMap.evByDisc[parseInt(discId,10)] || [];
-    } else {
-      // geen discipline gekozen -> toon alle events onder alle disciplines van deze sport
-      var dlist = startersMap.discBySport[sportId]||[];
-      for(var i=0;i<dlist.length;i++){
-        var arr = startersMap.evByDisc[dlist[i].id]||[];
-        Array.prototype.push.apply(evs, arr);
+  function renderEvents(){
+    var q=(el('u-q').value||'').toLowerCase();
+    var body = el('tbl-events'); body.innerHTML='';
+    var rows=[], i;
+    for(i=0;i<events.length;i++){
+      var e=events[i], d=findDisciplineById(e.discipline_id), sp=d?findSportById(d.sport_id):null;
+      var sName=(sp?sp.name:''); var dName=(d?d.name:''); var eName=e.name||'';
+      if(!q || sName.toLowerCase().indexOf(q)>-1 || dName.toLowerCase().indexOf(q)>-1 || eName.toLowerCase().indexOf(q)>-1){
+        rows.push({e:e, d:d, sp:sp});
       }
     }
-    var opt = document.createElement('option'); opt.value=''; opt.textContent='— kies event —'; evSel.appendChild(opt);
-    for(var j=0;j<evs.length;j++){
-      var o=document.createElement('option');
-      o.value=evs[j].id;
-      o.textContent=evs[j].name;
-      evSel.appendChild(o);
+    el('ev-count').textContent=String(rows.length);
+    if(!rows.length){ body.innerHTML='<tr><td colspan="7" class="muted">Geen resultaten</td></tr>'; return; }
+    for(i=0;i<rows.length;i++){
+      var r=rows[i], e=r.e, d=r.d, sp=r.sp, tr=document.createElement('tr');
+      tr.innerHTML =
+       '<td>'+esc(sp?sp.name:'')+'</td>'+
+       '<td>'+esc(d?d.name:'')+'</td>'+
+       '<td><input id="ev-name-'+e.id+'" value="'+esc(e.name||'')+'" style="min-width:120px"></td>'+
+       '<td>'+
+         '<select id="ev-gender-'+e.id+'">'+
+           '<option value="M" '+(e.gender==='M'?'selected':'')+'>M</option>'+
+           '<option value="V" '+(e.gender==='V'?'selected':'')+'>V</option>'+
+           '<option value="X" '+(e.gender==='X'?'selected':'')+'>X</option>'+
+         '</select>'+
+       '</td>'+
+       '<td>'+
+         '<select id="ev-active-'+e.id+'">'+
+           '<option value="true" '+(e.is_active?'selected':'')+'>Ja</option>'+
+           '<option value="false" '+(!e.is_active?'selected':'')+'>Nee</option>'+
+         '</select>'+
+       '</td>'+
+       '<td><input id="ev-maxtotal-'+e.id+'" type="number" min="1" value="'+(e.max_athletes_total!=null?e.max_athletes_total:'')+'" style="max-width:110px"></td>'+
+       '<td class="row">'+
+         '<button class="btn ok" onclick="saveEvent('+e.id+')">Opslaan</button>'+
+         '<button class="btn bad" onclick="deleteEvent('+e.id+')">Verwijderen</button>'+
+       '</td>';
+      body.appendChild(tr);
     }
   }
+  function saveEvent(id){
+    setStatus('st-events','Opslaan…'); showErr('err-events','');
+    var name=el('ev-name-'+id).value;
+    var gender=el('ev-gender-'+id).value;
+    var active=el('ev-active-'+id).value==='true';
+    var maxTot = el('ev-maxtotal-'+id).value ? parseInt(el('ev-maxtotal-'+id).value,10) : null;
+    sb.from('events').update({ name:name, gender:gender, is_active:active, max_athletes_total:maxTot }).eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-events', r.error.message||String(r.error)); return; }
+        setStatus('st-events','Opgeslagen!'); setTimeout(function(){ setStatus('st-events',''); }, 1000);
+        loadUnits();
+      });
+  }
+  function deleteSport(id){
+    if(!confirm('Let op: verwijdert ook disciplines/events onder deze sport. Doorgaan?')) return;
+    sb.from('sports').delete().eq('id', id).then(function(r){ if(r.error){ alert(r.error.message||r.error); return; } loadUnits(); });
+  }
+  function deleteDisc(id){
+    if(!confirm('Let op: verwijdert ook events onder deze discipline. Doorgaan?')) return;
+    sb.from('disciplines').delete().eq('id', id).then(function(r){ if(r.error){ alert(r.error.message||r.error); return; } loadUnits(); });
+  }
+  function deleteEvent(id){
+    if(!confirm('Event verwijderen?')) return;
+    sb.from('events').delete().eq('id', id).then(function(r){ if(r.error){ alert(r.error.message||r.error); return; } loadUnits(); });
+  }
+  function findSportById(id){ for(var i=0;i<sports.length;i++){ if(sports[i].id===id) return sports[i]; } return null; }
+  function findDisciplineById(id){ for(var i=0;i<disciplines.length;i++){ if(disciplines[i].id===id) return disciplines[i]; } return null; }
 
-  // ===== Starters (CRUD) =====
+  /* =======================
+   * FORMAT & RONDEN
+   * ======================= */
+  function loadFormats(){
+    setStatus('st-rounds',''); showErr('err-rounds','');
+    Promise.all([
+      sb.from('events').select('id,name,discipline_id').eq('is_active', true).order('name'),
+      sb.from('disciplines').select('id,name,sport_id'),
+      sb.from('sports').select('id,name'),
+      sb.from('format_templates').select('id,name,rounds_json').order('name'),
+      sb.from('venues').select('id,name').order('name')
+    ]).then(function(arr){
+      var ev=arr[0], di=arr[1], sp=arr[2], ft=arr[3], vn=arr[4];
+      if(ev.error||di.error||sp.error||ft.error||vn.error){
+        showErr('err-rounds', (ev.error&&ev.error.message)||(di.error&&di.error.message)||(ft.error&&ft.error.message)||(vn.error&&vn.error.message));
+        return;
+      }
+      events=ev.data||[]; disciplines=di.data||disciplines; sports=sp.data||sports; templates=ft.data||[]; venues=vn.data||[];
+      // fill selects
+      var eSel=el('fr-event'); eSel.innerHTML=''; var s1=document.createElement('option'); s1.value=''; s1.textContent='— kies event —'; eSel.appendChild(s1);
+      for(var i=0;i<events.length;i++){ var o=document.createElement('option'); o.value=events[i].id; o.textContent=events[i].name; eSel.appendChild(o); }
+      var tSel=el('fr-template'); tSel.innerHTML=''; var s2=document.createElement('option'); s2.value=''; s2.textContent='— kies template —'; tSel.appendChild(s2);
+      for(var j=0;j<templates.length;j++){ var o2=document.createElement('option'); o2.value=templates[j].id; o2.textContent=templates[j].name; tSel.appendChild(o2); }
+      var vSel=el('fr-venue'); vSel.innerHTML=''; var s3=document.createElement('option'); s3.value=''; s3.textContent='(geen)'; vSel.appendChild(s3);
+      for(var k=0;k<venues.length;k++){ var o3=document.createElement('option'); o3.value=venues[k].id; o3.textContent=venues[k].name; vSel.appendChild(o3); }
+
+      // sim dropdown deelt dezelfde eventlijst
+      var sSel=el('sim-event'); sSel.innerHTML=''; var s4=document.createElement('option'); s4.value=''; s4.textContent='— kies event —'; sSel.appendChild(s4);
+      for(var m=0;m<events.length;m++){ var o4=document.createElement('option'); o4.value=events[m].id; o4.textContent=events[m].name; sSel.appendChild(o4); }
+    });
+  }
+
+  function loadRounds(){
+    var evId = parseInt(el('fr-event').value||'0',10);
+    if(!evId){ alert('Kies eerst een event.'); return; }
+    setStatus('st-rounds','Laden…'); showErr('err-rounds','');
+    sb.from('event_rounds').select('id,event_id,order_index,name,label,day_number,block,venue_id').eq('event_id', evId).order('order_index')
+      .then(function(r){
+        if(r.error){ showErr('err-rounds', r.error.message||String(r.error)); setStatus('st-rounds',''); return; }
+        roundsForEvent = r.data||[];
+        renderRounds(); setStatus('st-rounds','');
+      });
+  }
+
+  function renderRounds(){
+    var body = el('tbl-rounds'); body.innerHTML='';
+    if(!roundsForEvent.length){ body.innerHTML='<tr><td colspan="7" class="muted">Nog geen rondes voor dit event.</td></tr>'; return; }
+    for(var i=0;i<roundsForEvent.length;i++){
+      var r=roundsForEvent[i]; var tr=document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+r.order_index+'</td>'+
+        '<td>'+esc(r.name)+'</td>'+
+        '<td>'+esc(r.label)+'</td>'+
+        '<td><input id="rd-day-'+r.id+'" type="number" value="'+(r.day_number!=null?r.day_number:'')+'" style="max-width:90px"></td>'+
+        '<td>'+
+          '<select id="rd-block-'+r.id+'">'+
+            '<option '+(r.block==='Ochtend'?'selected':'')+'>Ochtend</option>'+
+            '<option '+(r.block==='Middag'?'selected':'')+'>Middag</option>'+
+            '<option '+(r.block==='Avond'?'selected':'')+'>Avond</option>'+
+          '</select>'+
+        '</td>'+
+        '<td>'+venueSelectHtml('rd-venue-'+r.id, r.venue_id)+'</td>'+
+        '<td><button class="btn ok" onclick="saveRound('+r.id+')">Opslaan</button> '+
+            '<button class="btn bad" onclick="deleteRound('+r.id+')">Verwijderen</button></td>';
+      body.appendChild(tr);
+    }
+    el('rounds-summary').textContent = roundsForEvent.length+' rondes';
+  }
+
+  function venueSelectHtml(id, current){
+    var h = '<select id="'+id+'"><option value="">(geen)</option>';
+    for(var i=0;i<venues.length;i++){
+      var sel = (venues[i].id===current)?'selected':'';
+      h += '<option value="'+venues[i].id+'" '+sel+'>'+esc(venues[i].name)+'</option>';
+    }
+    h += '</select>';
+    return h;
+  }
+
+  function applyTemplate(){
+    var evId = parseInt(el('fr-event').value||'0',10);
+    var tplId= parseInt(el('fr-template').value||'0',10);
+    var finalDay = parseInt(el('fr-final-day').value||'0',10);
+    var blocks = (el('fr-blocks').value||'Ochtend,Middag,Avond').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var venueId = el('fr-venue').value ? parseInt(el('fr-venue').value,10) : null;
+
+    if(!evId || !tplId || !finalDay || finalDay<1){ alert('Kies event, template en geldige finaledag (≥1).'); return; }
+
+    setStatus('st-rounds','Rondes aanmaken…'); showErr('err-rounds','');
+    sb.rpc('set_event_rounds_from_template', {
+      p_event_id: evId,
+      p_template_id: tplId,
+      p_final_day: finalDay,
+      p_blocks_json: blocks,
+      p_venue_id: venueId
+    }).then(function(r){
+      if(r.error){ showErr('err-rounds', r.error.message||String(r.error)); setStatus('st-rounds',''); return; }
+      setStatus('st-rounds','Rondes aangemaakt!'); setTimeout(function(){ setStatus('st-rounds',''); }, 1200);
+      loadRounds();
+    });
+  }
+
+  function saveRound(id){
+    var day = el('rd-day-'+id).value ? parseInt(el('rd-day-'+id).value,10) : null;
+    var block = el('rd-block-'+id).value || null;
+    var venueId = el('rd-venue-'+id).value ? parseInt(el('rd-venue-'+id).value,10) : null;
+    setStatus('st-rounds','Opslaan…'); showErr('err-rounds','');
+    sb.from('event_rounds').update({ day_number:day, block:block, venue_id:venueId }).eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-rounds', r.error.message||String(r.error)); setStatus('st-rounds',''); return; }
+        setStatus('st-rounds','Opgeslagen!'); setTimeout(function(){ setStatus('st-rounds',''); }, 1000);
+        loadRounds();
+      });
+  }
+
+  function deleteRound(id){
+    if(!confirm('Ronde verwijderen?')) return;
+    setStatus('st-rounds','Verwijderen…'); showErr('err-rounds','');
+    sb.from('event_rounds').delete().eq('id', id)
+      .then(function(r){ if(r.error){ showErr('err-rounds', r.error.message||String(r.error)); setStatus('st-rounds',''); return; }
+        setStatus('st-rounds',''); loadRounds();
+      });
+  }
+
+  function runSim(){
+    var evId = parseInt(el('sim-event').value||'0',10);
+    if(!evId){ alert('Kies een event.'); return; }
+    el('sim-out').value = 'Simuleren…';
+    sb.rpc('simulate_test_event', { p_event_id: evId })
+      .then(function(r){
+        if(r.error){ el('sim-out').value = 'Error: '+(r.error.message||r.error); return; }
+        el('sim-out').value = JSON.stringify(r.data||{}, null, 2);
+      });
+  }
+
+  /* =======================
+   * STARTER TEMPLATES (zoals eerder, met Event dropdowns)
+   * ======================= */
   function loadStarters(){
     setStatus('st-starters','Laden…'); showErr('err-starters','');
-    // Haal, incl. event_id (nieuw)
-    sb.from('starter_templates').select('id,event_id,sport,event,qty,base_rating,base_stats').order('id')
+    sb.from('starter_templates').select('id,event_id,sport,event,qty,base_stats').order('id')
       .then(function(res){
         if(res.error){ showErr('err-starters', res.error.message||String(res.error)); setStatus('st-starters',''); return; }
         starters = res.data||[];
         el('starters-count').textContent = String(starters.length)+' regels';
-        renderStarters();
-        setStatus('st-starters','');
+        // taxonomy voor keuzelijsten hergebruiken uit units/formats
+        if(!sports.length || !disciplines.length || !events.length){ loadUnits(); }
+        fillSportsForStarters(); renderStarters(); setStatus('st-starters','');
       });
   }
+  function fillSportsForStarters(){
+    // bouw maps: discBySport, evByDisc
+    startersMap.discBySport={}; startersMap.evByDisc={};
+    var i; for(i=0;i<disciplines.length;i++){ var d=disciplines[i]; (startersMap.discBySport[d.sport_id]||(startersMap.discBySport[d.sport_id]=[])).push(d); }
+    for(i=0;i<events.length;i++){ var e=events[i]; (startersMap.evByDisc[e.discipline_id]||(startersMap.evByDisc[e.discipline_id]=[])).push(e); }
 
+    var s = el('st-sport'); s.innerHTML=''; var o=document.createElement('option'); o.value=''; o.textContent='— kies sport —'; s.appendChild(o);
+    for(i=0;i<sports.length;i++){ var opt=document.createElement('option'); opt.value=sports[i].id; opt.textContent=sports[i].name; s.appendChild(opt); }
+    var d = el('st-disc'); d.innerHTML=''; var o2=document.createElement('option'); o2.value=''; o2.textContent='(alle)'; d.appendChild(o2);
+    var eSel = el('st-event'); eSel.innerHTML=''; var o3=document.createElement('option'); o3.value=''; o3.textContent='— kies event —'; eSel.appendChild(o3);
+  }
+  function fillDisciplinesForStarters(){
+    var sportId = parseInt(el('st-sport').value||'0',10);
+    var d = el('st-disc'); d.innerHTML=''; var o2=document.createElement('option'); o2.value=''; o2.textContent='(alle)'; d.appendChild(o2);
+    if(!sportId) return;
+    var list=startersMap.discBySport[sportId]||[];
+    for(var i=0;i<list.length;i++){ var o=document.createElement('option'); o.value=list[i].id; o.textContent=list[i].name; d.appendChild(o); }
+  }
+  function fillEventsForStarters(){
+    var sportId = parseInt(el('st-sport').value||'0',10);
+    var discId = el('st-disc').value ? parseInt(el('st-disc').value,10) : null;
+    var eSel = el('st-event'); eSel.innerHTML=''; var o3=document.createElement('option'); o3.value=''; o3.textContent='— kies event —'; eSel.appendChild(o3);
+    var evs=[];
+    if(discId){ evs = startersMap.evByDisc[discId]||[]; }
+    else {
+      var dlist=startersMap.discBySport[sportId]||[]; for(var i=0;i<dlist.length;i++){ var arr=startersMap.evByDisc[dlist[i].id]||[]; Array.prototype.push.apply(evs, arr); }
+    }
+    for(var j=0;j<evs.length;j++){ var o=document.createElement('option'); o.value=evs[j].id; o.textContent=evs[j].name; eSel.appendChild(o); }
+  }
   function renderStarters(){
     var body = el('starters-body'); body.innerHTML='';
     if(!starters.length){ body.innerHTML = '<tr><td colspan="6" class="muted">Geen templates</td></tr>'; return; }
@@ -429,14 +842,13 @@
       var ev = findEventById(s.event_id);
       var disc = ev ? findDisciplineById(ev.discipline_id) : null;
       var sport = disc ? findSportById(disc.sport_id) : null;
-
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td>'+esc(sport ? sport.name : (s.sport||''))+'</td>'+
         '<td>'+esc(disc ? disc.name : '')+'</td>'+
         '<td>'+(ev ? esc(ev.name) : esc(s.event||''))+'</td>'+
         '<td><input style="max-width:90px" type="number" min="1" value="'+(s.qty||1)+'" id="qty-'+s.id+'"></td>'+
-        '<td><input style="min-width:220px" value=\''+esc(JSON.stringify(s.base_stats||{}))+'\' id="stats-'+s.id+'"><div class="hint">rating is random; stats zijn optioneel</div></td>'+
+        '<td><input style="min-width:220px" value=\''+esc(JSON.stringify(s.base_stats||{}))+'\' id="stats-'+s.id+'"><div class="hint">rating is random; stats optioneel</div></td>'+
         '<td class="row">'+
           '<button class="btn ok" onclick="updateStarter('+s.id+')">Opslaan</button>'+
           '<button class="btn bad" onclick="deleteStarter('+s.id+')">Verwijderen</button>'+
@@ -444,7 +856,6 @@
       body.appendChild(tr);
     }
   }
-
   function addStarter(){
     setStatus('st-starters','Toevoegen…'); showErr('err-starters','');
     var sportId = parseInt(el('st-sport').value||'0',10);
@@ -455,7 +866,6 @@
     if(!sportId || !eventId){ setStatus('st-starters',''); alert('Kies minimaal Sport en Event.'); return; }
     var stats={}; try{ stats = JSON.parse(statsTxt); }catch(e){ setStatus('st-starters',''); alert('Stats JSON ongeldig.'); return; }
 
-    // haal labels voor fallback tekstvelden
     var sp = findSportById(sportId); var ev = findEventById(eventId);
     sb.from('starter_templates').insert({
       event_id: eventId,
@@ -469,7 +879,6 @@
       loadStarters();
     });
   }
-
   function updateStarter(id){
     setStatus('st-starters','Opslaan…'); showErr('err-starters','');
     var qty  = parseInt(el('qty-'+id).value||'1',10);
@@ -481,7 +890,6 @@
         loadStarters();
       });
   }
-
   function deleteStarter(id){
     if(!confirm('Verwijderen?')) return;
     setStatus('st-starters','Verwijderen…'); showErr('err-starters','');
@@ -490,35 +898,25 @@
         setStatus('st-starters',''); loadStarters();
       });
   }
-
-  function findSportById(id){ for(var i=0;i<sports.length;i++){ if(sports[i].id===id) return sports[i]; } return null; }
-  function findDisciplineById(id){ for(var i=0;i<disciplines.length;i++){ if(disciplines[i].id===id) return disciplines[i]; } return null; }
   function findEventById(id){ for(var i=0;i<events.length;i++){ if(events[i].id===id) return events[i]; } return null; }
 
-  // ===== CONFIG (app_config + app_settings) =====
+  /* =======================
+   * CONFIG (zoals eerder)
+   * ======================= */
   function loadConfig(){
     setStatus('st-config','Laden…'); showErr('err-config','');
-
-    // app_config (starting_mp)
     var p1 = sb.from('app_config').select('*').order('id').limit(1);
-
-    // app_settings keys
     var keys = ['train_cost','scout_cost',
                 'starter_rating_min','starter_rating_max','starter_potential_delta_min','starter_potential_delta_max',
                 'scout_rating_min','scout_rating_max','scout_potential_delta_min','scout_potential_delta_max'];
     var p2 = sb.from('app_settings').select('key,value').in('key', keys);
-
-    Promise.all([p1, p2]).then(function(arr){
-      var c = arr[0], s = arr[1];
+    Promise.all([p1,p2]).then(function(arr){
+      var c=arr[0], s=arr[1];
       if(c.error){ showErr('err-config', c.error.message||String(c.error)); setStatus('st-config',''); return; }
       if(s.error){ showErr('err-config', s.error.message||String(s.error)); setStatus('st-config',''); return; }
-
-      var cfg = (c.data && c.data[0]) ? c.data[0] : { starting_mp: 100 };
-      el('cfg-starting-mp').value = (typeof cfg.starting_mp==='number')?cfg.starting_mp:100;
-
-      var map = {}; var i;
-      for(i=0;i<(s.data||[]).length;i++){ map[s.data[i].key] = (s.data[i].value!=null ? String(s.data[i].value) : null); }
-
+      var cfg=(c.data&&c.data[0])?c.data[0]:{starting_mp:100};
+      el('cfg-starting-mp').value=(typeof cfg.starting_mp==='number')?cfg.starting_mp:100;
+      var map={}; for(var i=0;i<(s.data||[]).length;i++){ map[s.data[i].key]=String(s.data[i].value); }
       setNum('cfg-train-cost', map['train_cost'], 5);
       setNum('cfg-scout-cost', map['scout_cost'], 20);
       setNum('cfg-starter-rmin', map['starter_rating_min'], 5);
@@ -529,21 +927,13 @@
       setNum('cfg-scout-rmax', map['scout_rating_max'], 6.5);
       setNum('cfg-scout-dmin', map['scout_potential_delta_min'], 2);
       setNum('cfg-scout-dmax', map['scout_potential_delta_max'], 4);
-
       setStatus('st-config','');
     });
   }
-
-  function setNum(id, val, dflt){
-    var n = (val!=null && val!=='') ? Number(val) : dflt;
-    el(id).value = isNaN(n) ? dflt : n;
-  }
-
+  function setNum(id, val, dflt){ var n=(val!=null && val!=='')?Number(val):dflt; el(id).value = isNaN(n)?dflt:n; }
   function saveConfig(){
     setStatus('st-config','Opslaan…'); showErr('err-config','');
-
     var starting = parseInt(el('cfg-starting-mp').value||'100',10);
-
     var kv = [
       ['train_cost', parseInt(el('cfg-train-cost').value||'5',10)],
       ['scout_cost', parseInt(el('cfg-scout-cost').value||'20',10)],
@@ -556,155 +946,83 @@
       ['scout_potential_delta_min', parseFloat(el('cfg-scout-dmin').value||'2')],
       ['scout_potential_delta_max', parseFloat(el('cfg-scout-dmax').value||'4')]
     ];
-
-    // upsert app_config (starting_mp)
     sb.from('app_config').select('id').order('id').limit(1)
       .then(function(r){
         if(r.error){ showErr('err-config', r.error.message||String(r.error)); return; }
-        if(!r.data || !r.data.length){
-          return sb.from('app_config').insert({ starting_mp: starting });
-        } else {
-          return sb.from('app_config').update({ starting_mp: starting }).eq('id', r.data[0].id);
-        }
+        if(!r.data||!r.data.length){ return sb.from('app_config').insert({ starting_mp: starting }); }
+        else { return sb.from('app_config').update({ starting_mp: starting }).eq('id', r.data[0].id); }
       })
-      .then(function(x){
-        if(x && x.error){ showErr('err-config', x.error.message||String(x.error)); }
-
-        // upsert app_settings keys één voor één
-        var chain = Promise.resolve();
-        for(var i=0;i<kv.length;i++){
-          (function(k, v){
-            chain = chain.then(function(){
-              return sb.from('app_settings').upsert({ key:k, value: String(v) }, { onConflict: 'key' });
-            });
-          })(kv[i][0], kv[i][1]);
-        }
+      .then(function(x){ if(x && x.error){ showErr('err-config', x.error.message||String(x.error)); }
+        var chain=Promise.resolve();
+        for(var i=0;i<kv.length;i++){ (function(k,v){ chain=chain.then(function(){ return sb.from('app_settings').upsert({key:k,value:String(v)},{onConflict:'key'}); }); })(kv[i][0],kv[i][1]); }
         return chain;
       })
-      .then(function(){
-        setStatus('st-config','Opgeslagen!'); setTimeout(function(){ setStatus('st-config',''); }, 1200);
-      })
-      .catch(function(e){
-        showErr('err-config', e && e.message ? e.message : String(e));
-      });
+      .then(function(){ setStatus('st-config','Opgeslagen!'); setTimeout(function(){ setStatus('st-config',''); }, 1200); })
+      .catch(function(e){ showErr('err-config', e && e.message?e.message:String(e)); });
   }
 
-  // ===== Managers =====
+  /* =======================
+   * MANAGERS / ATHLETES
+   * ======================= */
   function loadManagers(){
     setStatus('st-managers','Laden…'); showErr('err-managers','');
     sb.from('my_profile').select('user_id,email,display_name,mp,country_name,created_at')
       .order('created_at',{ascending:true})
       .then(function(r){
         if(r.error){ showErr('err-managers', r.error.message||String(r.error)); setStatus('st-managers',''); return; }
-        managers = r.data || [];
-        el('managers-count').textContent = String(managers.length);
-        renderManagers();
-        setStatus('st-managers','');
+        managers = r.data || []; el('managers-count').textContent = String(managers.length);
+        renderManagers(); setStatus('st-managers','');
       });
   }
   function renderManagers(){
     var q=(el('mgr-q').value||'').toLowerCase();
-    var body=el('managers-body'); body.innerHTML='';
-    var rows=[]; var i;
+    var body=el('managers-body'); body.innerHTML=''; var rows=[], i;
     for(i=0;i<managers.length;i++){
       var m=managers[i];
-      if(!q || (m.email||'').toLowerCase().indexOf(q)>-1 ||
-               (m.display_name||'').toLowerCase().indexOf(q)>-1 ||
-               (m.country_name||'').toLowerCase().indexOf(q)>-1){ rows.push(m); }
+      if(!q || (m.email||'').toLowerCase().indexOf(q)>-1 || (m.display_name||'').toLowerCase().indexOf(q)>-1 || (m.country_name||'').toLowerCase().indexOf(q)>-1){ rows.push(m); }
     }
     if(!rows.length){ body.innerHTML='<tr><td colspan="6" class="muted">Geen resultaten</td></tr>'; return; }
     for(i=0;i<rows.length;i++){
-      var r=rows[i];
-      var tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td>'+esc(r.email)+'</td>'+
-        '<td><input id="mgr-name-'+r.user_id+'" value="'+esc(r.display_name||'')+'" style="min-width:160px"></td>'+
-        '<td>'+esc(r.country_name||'')+'</td>'+
-        '<td><input id="mgr-mp-'+r.user_id+'" type="number" value="'+(typeof r.mp==='number'?r.mp:0)+'" style="max-width:120px"></td>'+
-        '<td class="muted">'+new Date(r.created_at).toLocaleString()+'</td>'+
-        '<td><button class="btn ok" onclick="saveManager(\''+r.user_id+'\')">Opslaan</button></td>';
+      var r=rows[i], tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(r.email)+'</td>'+
+                   '<td><input id="mgr-name-'+r.user_id+'" value="'+esc(r.display_name||'')+'" style="min-width:160px"></td>'+
+                   '<td>'+esc(r.country_name||'')+'</td>'+
+                   '<td><input id="mgr-mp-'+r.user_id+'" type="number" value="'+(typeof r.mp==='number'?r.mp:0)+'" style="max-width:120px"></td>'+
+                   '<td class="muted">'+new Date(r.created_at).toLocaleString()+'</td>'+
+                   '<td><button class="btn ok" onclick="saveManager(\''+r.user_id+'\')">Opslaan</button></td>';
       body.appendChild(tr);
     }
   }
   function saveManager(user_id){
     setStatus('st-managers','Opslaan…'); showErr('err-managers','');
-    var display_name = el('mgr-name-'+user_id).value;
-    var mp = parseInt(el('mgr-mp-'+user_id).value||'0',10);
-    sb.from('managers').update({ display_name: display_name, mp: mp }).eq('user_id', user_id)
-      .then(function(r){
-        if(r.error){ showErr('err-managers', r.error.message||String(r.error)); setStatus('st-managers',''); return; }
-        setStatus('st-managers','Opgeslagen!'); setTimeout(function(){ setStatus('st-managers',''); }, 1100);
-        loadManagers();
+    var display_name=el('mgr-name-'+user_id).value;
+    var mp=parseInt(el('mgr-mp-'+user_id).value||'0',10);
+    sb.from('managers').update({ display_name:display_name, mp:mp }).eq('user_id', user_id)
+      .then(function(r){ if(r.error){ showErr('err-managers', r.error.message||String(r.error)); setStatus('st-managers',''); return; }
+        setStatus('st-managers','Opgeslagen!'); setTimeout(function(){ setStatus('st-managers',''); }, 1100); loadManagers();
       });
   }
 
-  // ===== Athletes =====
   function loadAthletes(){
     setStatus('st-athletes','Laden…'); showErr('err-athletes','');
     sb.from('athletes').select('id,manager_id,sport,event,rating,active,created_at').order('created_at',{ascending:false}).limit(500)
       .then(function(r){
         if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); setStatus('st-athletes',''); return; }
         athletes = r.data || [];
-        // emails mappen
-        var ids = {}, list = [], i;
-        for(i=0;i<athletes.length;i++){ var mid = athletes[i].manager_id; if(mid && !ids[mid]){ ids[mid]=1; list.push(mid); } }
+        var ids={}, list=[], i; for(i=0;i<athletes.length;i++){ var mid=athletes[i].manager_id; if(mid && !ids[mid]){ ids[mid]=1; list.push(mid); } }
         if(!list.length){ el('ath-count').textContent='0'; renderAthletes(); setStatus('st-athletes',''); return; }
         sb.from('managers').select('user_id,email').in('user_id', list)
           .then(function(mx){
-            var map = {}; if(mx.data){ for(i=0;i<mx.data.length;i++){ map[mx.data[i].user_id] = mx.data[i].email; } }
+            var map={}; if(mx.data){ for(i=0;i<mx.data.length;i++){ map[mx.data[i].user_id]=mx.data[i].email; } }
             for(i=0;i<athletes.length;i++){ athletes[i].manager_email = map[athletes[i].manager_id] || athletes[i].manager_id; }
             el('ath-count').textContent = String(athletes.length);
-            renderAthletes();
-            setStatus('st-athletes','');
+            renderAthletes(); setStatus('st-athletes','');
           });
       });
   }
   function renderAthletes(){
     var q=(el('ath-q').value||'').toLowerCase();
-    var body=el('ath-body'); body.innerHTML='';
-    var rows=[], i;
+    var body=el('ath-body'); body.innerHTML=''; var rows=[], i;
     for(i=0;i<athletes.length;i++){
       var a=athletes[i];
-      if(!q || (a.sport||'').toLowerCase().indexOf(q)>-1 ||
-               (a.event||'').toLowerCase().indexOf(q)>-1 ||
-               (a.manager_email||'').toLowerCase().indexOf(q)>-1){ rows.push(a); }
-    }
-    if(!rows.length){ body.innerHTML = '<tr><td colspan="7" class="muted">Geen resultaten</td></tr>'; return; }
-    for(i=0;i<rows.length;i++){
-      var r=rows[i];
-      var tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td class="muted">'+esc(r.manager_email||'')+'</td>'+
-        '<td>'+esc(r.sport||'')+'</td>'+
-        '<td>'+esc(r.event||'')+'</td>'+
-        '<td>'+Number(r.rating||0).toFixed(1)+'</td>'+
-        '<td>'+(r.active ? 'Actief' : 'Inactief')+'</td>'+
-        '<td class="muted">'+new Date(r.created_at).toLocaleString()+'</td>'+
-        '<td class="row">'+
-          '<button class="btn" onclick="toggleAthlete(\''+r.id+'\','+(!r.active)+')">'+(r.active?'Deactiveer':'Activeer')+'</button>'+
-          '<button class="btn bad" onclick="deleteAthlete(\''+r.id+'\')">Verwijderen</button>'+
-        '</td>';
-      body.appendChild(tr);
-    }
-  }
-  function toggleAthlete(id, active){
-    setStatus('st-athletes','Bijwerken…'); showErr('err-athletes','');
-    sb.from('athletes').update({ active: active }).eq('id', id)
-      .then(function(r){ if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); }
-        setStatus('st-athletes',''); loadAthletes();
-      });
-  }
-  function deleteAthlete(id){
-    if(!confirm('Atleet verwijderen?')) return;
-    setStatus('st-athletes','Verwijderen…'); showErr('err-athletes','');
-    sb.from('athletes').delete().eq('id', id)
-      .then(function(r){ if(r.error){ showErr('err-athletes', r.error.message||String(r.error)); }
-        setStatus('st-athletes',''); loadAthletes();
-      });
-  }
-
-  // ===== util =====
-  function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-</script>
-</body>
-</html>
+      if(!q || (a.sport||'').toLowerCase().indexOf(q)>-1 || (a.event||'').toLowerCase().indexOf(q)>-1 || (a.manager_email||'').toLowerCase().indexOf
