@@ -28,16 +28,19 @@
 </head>
 <body>
   <header>
-    <div class="row">
-      <a href="index.html">Home</a>
-      <a href="admin.html" id="admin-link" style="display:none">Admin</a>
-    </div>
-    <div class="row">
-      <button class="ghost" onclick="refreshAll()">⟳ Vernieuwen</button>
-      <button class="ghost" onclick="forceInit()">Forceer init</button>
-      <button class="ghost" onclick="logout()">Uitloggen</button>
-    </div>
-  </header>
+  <div class="row">
+    <a href="index.html">Home</a>
+    <a href="admin.html" id="admin-link" style="display:none">Admin</a>
+    <a href="trainen.html">Atleten trainen</a>
+    <a href="scouten.html">Scouten</a>
+  </div>
+  <div class="row">
+    <button class="ghost" onclick="refreshAll()">⟳ Vernieuwen</button>
+    <button class="ghost" onclick="forceInit()">Forceer init</button>
+    <button class="ghost" onclick="logout()">Uitloggen</button>
+  </div>
+</header>
+
 
   <div class="wrap">
     <div id="auth-warning" class="card" style="display:none">
