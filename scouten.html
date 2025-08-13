@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scouten • Multisport-Manager</title>
+  <style>
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
+    header a:hover, header button:hover{background:#ffffff2a}
+    .wrap{max-width:900px;margin:20px auto;padding:0 14px}
+    .card{background:#ffffff10;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
+    .btn{display:inline-block;padding:10px 12px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#e63946;color:#fff}
+    .status{margin-top:6px;font-size:.9rem;color:#ffffffcc;min-height:1.1em;white-space:pre-line}
+    .errorbox{margin-top:8px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
+    .muted{color:#ffffffb5}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left;font-size:.95rem}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.85rem}
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <div class="row">
+    <a href="index.html">Home</a>
+    <a href="manager.html">Manager</a>
+  </div>
+  <div class="row">
+    <button onclick="refreshAll()">⟳ Vernieuwen</button>
+    <button onclick="logout()">Uitloggen</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="auth-warning" class="card" style="display:none">
+    <h2>Niet ingelogd</h2>
+    <p class="muted">Log in op de <a href="index.html" style="color:#fff">homepage</a>.</p>
+  </div>
+
+  <div id="app" style="display:none">
+    <section class="card">
+      <h2 style="margin:0">Scouten</h2>
+      <div class="row" style="margin-top:8px">
+        <select id="sportSel" style="flex:1;min-width:180px" onchange="fillEvents()">
+          <option value="">— kies sport —</option>
+        </select>
+        <select id="eventSel" style="flex:2;min-width:220px">
+          <option value="">— kies onderdeel —</option>
+        </select>
+        <label class="pill">Kosten: <span id="cost">20</span> MP</label>
+        <span class="pill">MP: <span id="mp">0</span></span>
+        <button class="btn" onclick="scout()">Scout</button>
+      </div>
+      <div class="status" id="st-scout"></div>
+      <div class="errorbox" id="err-scout"></div>
+    </section>
+
+    <section class="card" id="result" style="display:none">
+      <h2 style="margin:0">Nieuwe atleet</h2>
+      <table style="margin-top:8px">
+        <tbody>
+          <tr><th>Sport</th><td id="r-sport" class="muted">—</td></tr>
+          <tr><th>Onderdeel</th><td id="r-event" class="muted">—</td></tr>
+          <tr><th>Rating</th><td id="r-rating" class="muted">—</td></tr>
+          <tr><th>ID</th><td id="r-id" class="muted">—</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+
+<script>
+  if(!window.supabase){ alert("Kon Supabase library niet laden."); }
+  var SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
+  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var sessionUser=null, events=[], sports=[], mpVal=0;
+
+  function el(id){ return document.getElementById(id); }
+  function setStatus(id,t){ el(id).textContent=t||''; }
+  function showErr(id,m){ var b=el(id); b.style.display=m?'block':'none'; b.textContent=m||''; }
+
+  sb.auth.onAuthStateChange(function(_e,s){ if(s){ boot(); } else { showAuth(); } });
+  boot();
+
+  function showAuth(){ el('auth-warning').style.display=''; el('app').style.display='none'; }
+  function showApp(){ el('auth-warning').style.display='none'; el('app').style.display=''; }
+
+  function boot(){
+    sb.auth.getSession().then(function(r){
+      sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
+      if(!sessionUser){ showAuth(); return; }
+      showApp();
+      refreshAll();
+    });
+  }
+
+  function refreshAll(){ loadMP(); loadEvents(); }
+
+  function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
+
+  function loadMP(){
+    sb.from('managers').select('mp').eq('user_id', sessionUser.id).single().then(function(r){
+      if(!r.error){ mpVal = r.data.mp||0; el('mp').textContent = mpVal; }
+    });
+  }
+
+  function loadEvents(){
+    setStatus('st-scout','Laden…'); showErr('err-scout','');
+    sb.from('events').select('id,name,gender,discipline_id,is_active').eq('is_active', true)
+      .then(function(ev){
+        if(ev.error){ showErr('err-scout', ev.error.message||String(ev.error)); setStatus('st-scout',''); return; }
+        events = ev.data||[];
+        sb.from('disciplines').select('id,name,sport_id').then(function(disc){
+          if(disc.error){ showErr('err-scout', disc.error.message||String(disc.error)); setStatus('st-scout',''); return; }
+          var disciplines = disc.data||[];
+          sb.from('sports').select('id,name').then(function(sp){
+            if(sp.error){ showErr('err-scout', sp.error.message||String(sp.error)); setStatus('st-scout',''); return; }
+            sports = sp.data||[];
+            // bouw mapping sport -> eventnamen
+            fillSports(disciplines);
+            setStatus('st-scout','');
+          });
+        });
+      });
+  }
+
+  function fillSports(disciplines){
+    var sportSel = el('sportSel'); sportSel.innerHTML = '<option value="">— kies sport —</option>';
+    var map = {}; var i;
+    for(i=0;i<disciplines.length;i++){
+      var d = disciplines[i];
+      if(!map[d.sport_id]) map[d.sport_id] = [];
+      map[d.sport_id].push(d.id);
+    }
+    // bewaar mapping op DOM
+    sportSel._discBySport = map;
+
+    for(i=0;i<sports.length;i++){
+      var s = sports[i]; var opt = document.createElement('option');
+      opt.value = s.id; opt.textContent = s.name; sportSel.appendChild(opt);
+    }
+    fillEvents(); // initial
+  }
+
+  function fillEvents(){
+    var eventSel = el('eventSel'); eventSel.innerHTML = '<option value="">— kies onderdeel —</option>';
+    var sportId = parseInt(el('sportSel').value||'0',10);
+    if(!sportId){ return; }
+
+    var discIds = el('sportSel')._discBySport[sportId]||[];
+    for(var i=0;i<events.length;i++){
+      var e = events[i];
+      if(discIds.indexOf(e.discipline_id)>-1){
+        var opt = document.createElement('option');
+        opt.value = e.name; // we geven event naam door
+        opt.textContent = e.name + ' ('+ (e.gender||'') +')';
+        eventSel.appendChild(opt);
+      }
+    }
+  }
+
+  function sportNameById(id){
+    for(var i=0;i<sports.length;i++){ if(sports[i].id===id) return sports[i].name; }
+    return '';
+  }
+
+  function scout(){
+    var sportId = parseInt(el('sportSel').value||'0',10);
+    var eventName = el('eventSel').value||'';
+    var cost = parseInt(el('cost').textContent||'20',10);
+    if(!sportId || !eventName){ alert('Kies sport en onderdeel.'); return; }
+    if(mpVal < cost){ alert('Onvoldoende MP.'); return; }
+
+    var sName = sportNameById(sportId);
+    setStatus('st-scout','Scouten…'); showErr('err-scout','');
+    sb.rpc('scout_athlete', { p_manager_id: sessionUser.id, p_sport: sName, p_event: eventName, p_mp_cost: cost })
+      .then(function(r){
+        if(r.error){ showErr('err-scout', r.error.message||String(r.error)); setStatus('st-scout',''); return; }
+        if(!r.data || !r.data.ok){ showErr('err-scout', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-scout',''); return; }
+        setStatus('st-scout','Gescout! MP -'+(r.data.mp_spent||cost));
+        el('r-sport').textContent = sName;
+        el('r-event').textContent = eventName;
+        el('r-rating').textContent = (r.data.rating!=null)? Number(r.data.rating).toFixed(1): '—';
+        el('r-id').textContent = r.data.athlete_id || '—';
+        document.getElementById('result').style.display='';
+        // refresh MP
+        loadMP();
+      });
+  }
+</script>
+</body>
+</html>
