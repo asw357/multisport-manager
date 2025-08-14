@@ -107,9 +107,16 @@
     });
   }
 
-  function refreshAll(){ loadMP(); loadAthletes(); }
+  function refreshAll(){ loadSettings(); loadMP(); loadAthletes(); }
 
   function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
+
+  function loadSettings(){
+    // train_cost uit app_settings
+    sb.from('app_settings').select('value').eq('key','train_cost').single().then(function(r){
+      if(!r.error && r.data){ el('cost').textContent = parseInt(String(r.data.value)||'5',10); }
+    });
+  }
 
   function loadMP(){
     sb.from('managers').select('mp').eq('user_id', sessionUser.id).single().then(function(r){
@@ -160,11 +167,11 @@
     if(p4) plan.power = p4;
 
     setStatus('st-train','Training uitvoeren…'); showErr('err-train','');
-    sb.rpc('train_athlete', { p_manager_id: sessionUser.id, p_athlete_id: current.id, p_plan: plan, p_mp_cost: cost })
+    sb.rpc('train_athlete', { p_manager_id: sessionUser.id, p_athlete_id: current.id, p_plan: plan, p_mp_cost: null })
       .then(function(r){
         if(r.error){ showErr('err-train', r.error.message||String(r.error)); setStatus('st-train',''); return; }
         if(!r.data || !r.data.ok){ showErr('err-train', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-train',''); return; }
-        setStatus('st-train','Succes! Rating +0.1, MP -'+(r.data.mp_spent||cost));
+        setStatus('st-train','Succes! Rating geüpdatet, MP -'+(r.data.mp_spent||cost));
         // refresh
         loadMP(); loadAthletes();
       });
