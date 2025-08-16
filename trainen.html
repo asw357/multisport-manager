@@ -3,23 +3,20 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Atleten trainen • Multisport-Manager</title>
+  <title>Trainen • Multisport-Manager</title>
   <style>
     body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
-    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
     header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
     header a:hover, header button:hover{background:#ffffff2a}
-    .wrap{max-width:900px;margin:20px auto;padding:0 14px}
-    .card{background:#ffffff10;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
-    .btn{display:inline-block;padding:10px 12px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#2a9d8f;color:#fff}
-    .status{margin-top:6px;font-size:.9rem;color:#ffffffcc;min-height:1.1em;white-space:pre-line}
-    .errorbox{margin-top:8px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
-    .muted{color:#ffffffb5}
+    .wrap{max-width:1100px;margin:20px auto;padding:0 14px}
+    .card{background:#ffffff12;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left;font-size:.95rem}
-    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.85rem}
+    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
+    .btn{padding:8px 12px;border-radius:10px;border:0;background:#2a9d8f;color:#fff;cursor:pointer}
+    .muted{color:#ffffffc7}
+    .status{min-height:1.1em;margin-top:6px}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -28,11 +25,13 @@
   <div class="row">
     <a href="index.html">Home</a>
     <a href="manager.html">Manager</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
+    <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
   </div>
-  <div class="row">
-    <button onclick="refreshAll()">⟳ Vernieuwen</button>
-    <button onclick="logout()">Uitloggen</button>
-  </div>
+  <div class="row"><button onclick="logout()">Uitloggen</button></div>
 </header>
 
 <div class="wrap">
@@ -43,139 +42,59 @@
 
   <div id="app" style="display:none">
     <section class="card">
-      <h2 style="margin:0">Kies atleet</h2>
-      <div class="row" style="margin-top:8px">
-        <select id="athSel" style="flex:2;min-width:240px" onchange="bindAthlete()">
-          <option value="">— selecteer —</option>
-        </select>
-        <span class="pill">MP: <span id="mp">0</span></span>
-      </div>
-      <div class="status" id="st-ath"></div>
-      <div class="errorbox" id="err-ath"></div>
+      <h2 style="margin:0">Trainen</h2>
+      <p class="muted">Elke klik traint de atleet: <b>+0.1 rating</b> (tot hun verborgen cap). Kosten: <span id="cost">5</span> MP.</p>
+      <input id="q" placeholder="Zoek (sport / onderdeel)" oninput="render()"/>
       <table style="margin-top:8px">
-        <tbody>
-          <tr><th>Sport</th><td id="ath-sport" class="muted">—</td></tr>
-          <tr><th>Onderdeel</th><td id="ath-event" class="muted">—</td></tr>
-          <tr><th>Rating</th><td id="ath-rating" class="muted">—</td></tr>
-          <tr><th>Stats</th><td id="ath-stats" class="muted">—</td></tr>
-        </tbody>
+        <thead><tr><th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Cap</th><th>Actie</th></tr></thead>
+        <tbody id="body"><tr><td colspan="5" class="muted">Laden…</td></tr></tbody>
       </table>
-    </section>
-
-    <section class="card">
-      <h2 style="margin:0">Trainingsplan</h2>
-      <div class="row" style="margin-top:8px">
-        <input id="plan-speed" type="number" min="0" value="0" placeholder="speed (+)"/>
-        <input id="plan-endurance" type="number" min="0" value="0" placeholder="endurance (+)"/>
-        <input id="plan-technique" type="number" min="0" value="0" placeholder="technique (+)"/>
-        <input id="plan-power" type="number" min="0" value="0" placeholder="power (+)"/>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <label class="pill">Kosten per sessie: <span id="cost">5</span> MP</label>
-        <button class="btn" onclick="train()">Train</button>
-      </div>
-      <div class="status" id="st-train"></div>
-      <div class="errorbox" id="err-train"></div>
+      <div id="st" class="status"></div>
     </section>
   </div>
 </div>
 
 <script>
-  if(!window.supabase){ alert("Kon Supabase library niet laden."); }
-  var SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
-  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  var sessionUser = null;
-  var athletes = []; var current = null; var mpVal = 0;
+  const URL="https://mbrehhloxonpnihetuij.supabase.co";
+  const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  const sb = window.supabase.createClient(URL, KEY);
+  let user=null, list=[], trainCost=5;
 
-  function el(id){ return document.getElementById(id); }
-  function setStatus(id,t){ el(id).textContent = t||''; }
-  function showErr(id,m){ var b=el(id); b.style.display=m?'block':'none'; b.textContent=m||''; }
+  function el(id){return document.getElementById(id)}
+  function logout(){ sb.auth.signOut().then(()=>location.href='index.html') }
 
-  sb.auth.onAuthStateChange(function(_e,s){ if(s){ boot(); } else { showAuth(); } });
-  boot();
+  sb.auth.getSession().then(async r=>{
+    user=r.data?.session?.user; if(!user){ el('auth-warning').style.display=''; return; }
+    el('app').style.display='';
+    const cost=await sb.from('app_settings').select('value').eq('key','train_cost').maybeSingle();
+    if(!cost.error && cost.data) { trainCost = parseInt(cost.data.value||'5',10); el('cost').textContent=trainCost; }
+    load();
+  });
 
-  function showAuth(){ el('auth-warning').style.display=''; el('app').style.display='none'; }
-  function showApp(){ el('auth-warning').style.display='none'; el('app').style.display=''; }
-
-  function boot(){
-    sb.auth.getSession().then(function(r){
-      sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
-      if(!sessionUser){ showAuth(); return; }
-      showApp();
-      refreshAll();
+  async function load(){
+    const r=await sb.from('athletes').select('id,sport,event,rating,potential_max').eq('manager_id',user.id).order('created_at',{ascending:false});
+    list=r.data||[]; render();
+  }
+  function render(){
+    const q=(el('q').value||'').toLowerCase(); const body=el('body'); body.innerHTML='';
+    const arr=list.filter(a=> !q || (a.sport||'').toLowerCase().includes(q) || (a.event||'').toLowerCase().includes(q));
+    if(!arr.length){ body.innerHTML='<tr><td colspan="5" class="muted">Geen atleten</td></tr>'; return; }
+    arr.forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(a.sport||'')+'</td><td>'+esc(a.event||'')+'</td><td>'+num(a.rating)+'</td><td>'+num(a.potential_max)+'</td><td><button class="btn" onclick="train(\''+a.id+'\')">Train</button></td>';
+      body.appendChild(tr);
     });
   }
-
-  function refreshAll(){ loadSettings(); loadMP(); loadAthletes(); }
-
-  function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
-
-  function loadSettings(){
-    // train_cost uit app_settings
-    sb.from('app_settings').select('value').eq('key','train_cost').single().then(function(r){
-      if(!r.error && r.data){ el('cost').textContent = parseInt(String(r.data.value)||'5',10); }
-    });
+  async function train(id){
+    el('st').textContent='Trainen…';
+    const r=await sb.rpc('train_athlete',{ p_manager_id:user.id, p_athlete_id:id, p_plan:{s:1} });
+    if(r.error || !r.data?.ok){ el('st').textContent='Error: '+(r.error?.message || r.data?.message || ''); return; }
+    el('st').textContent='OK (+0.1, MP -'+r.data.mp_spent+')';
+    load();
+    setTimeout(()=>el('st').textContent='',1000);
   }
-
-  function loadMP(){
-    sb.from('managers').select('mp').eq('user_id', sessionUser.id).single().then(function(r){
-      if(!r.error){ mpVal = r.data.mp||0; el('mp').textContent = mpVal; }
-    });
-  }
-
-  function loadAthletes(){
-    setStatus('st-ath','Laden…'); showErr('err-ath','');
-    sb.from('athletes').select('id,sport,event,rating,stats').order('created_at',{ascending:false})
-      .then(function(r){
-        if(r.error){ showErr('err-ath', r.error.message||String(r.error)); setStatus('st-ath',''); return; }
-        athletes = r.data||[];
-        var sel = el('athSel'); sel.innerHTML = '<option value="">— selecteer —</option>';
-        for(var i=0;i<athletes.length;i++){
-          var a = athletes[i];
-          var opt = document.createElement('option');
-          opt.value = a.id; opt.textContent = (a.sport||'?')+' — '+(a.event||'?')+' (r='+Number(a.rating||0).toFixed(1)+')';
-          sel.appendChild(opt);
-        }
-        setStatus('st-ath','');
-        bindAthlete();
-      });
-  }
-
-  function bindAthlete(){
-    var id = el('athSel').value; current = null;
-    for(var i=0;i<athletes.length;i++){ if(athletes[i].id===id){ current = athletes[i]; break; } }
-    el('ath-sport').textContent = current ? (current.sport||'') : '—';
-    el('ath-event').textContent = current ? (current.event||'') : '—';
-    el('ath-rating').textContent = current ? Number(current.rating||0).toFixed(1) : '—';
-    el('ath-stats').textContent = current ? JSON.stringify(current.stats||{}) : '—';
-  }
-
-  function train(){
-    if(!current){ alert('Kies eerst een atleet.'); return; }
-    var cost = parseInt(el('cost').textContent||'5',10);
-    if(mpVal < cost){ alert('Onvoldoende MP.'); return; }
-
-    var plan = {};
-    var p1 = parseInt(el('plan-speed').value||'0',10);
-    var p2 = parseInt(el('plan-endurance').value||'0',10);
-    var p3 = parseInt(el('plan-technique').value||'0',10);
-    var p4 = parseInt(el('plan-power').value||'0',10);
-    if(p1) plan.speed = p1;
-    if(p2) plan.endurance = p2;
-    if(p3) plan.technique = p3;
-    if(p4) plan.power = p4;
-
-    setStatus('st-train','Training uitvoeren…'); showErr('err-train','');
-    sb.rpc('train_athlete', { p_manager_id: sessionUser.id, p_athlete_id: current.id, p_plan: plan, p_mp_cost: null })
-      .then(function(r){
-        if(r.error){ showErr('err-train', r.error.message||String(r.error)); setStatus('st-train',''); return; }
-        if(!r.data || !r.data.ok){ showErr('err-train', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-train',''); return; }
-        setStatus('st-train','Succes! Rating geüpdatet, MP -'+(r.data.mp_spent||cost));
-        // refresh
-        loadMP(); loadAthletes();
-      });
-  }
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function num(n){return (n==null?'—':Number(n).toFixed(1))}
 </script>
 </body>
 </html>
