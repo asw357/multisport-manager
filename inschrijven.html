@@ -6,7 +6,7 @@
   <title>Inschrijven • Multisport-Manager</title>
   <style>
     body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
-    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
     header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
     header a:hover, header button:hover{background:#ffffff2a}
     .wrap{max-width:1000px;margin:20px auto;padding:0 14px}
@@ -32,13 +32,13 @@
   <div class="row">
     <a href="index.html">Home</a>
     <a href="manager.html">Manager</a>
-    <a href="trainen.html">Atleten trainen</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
     <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
   </div>
-  <div class="row">
-    <button onclick="refreshAll()">⟳ Vernieuwen</button>
-    <button onclick="logout()">Uitloggen</button>
-  </div>
+  <div class="row"><button onclick="logout()">Uitloggen</button></div>
 </header>
 
 <div class="wrap">
@@ -51,20 +51,11 @@
     <section class="card">
       <h2 style="margin:0">Kies onderdeel</h2>
       <div class="grid3" style="margin-top:8px">
-        <div>
-          <label>Sport</label>
-          <select id="sportSel" onchange="fillEvents()"></select>
-        </div>
-        <div>
-          <label>Event</label>
-          <select id="eventSel" onchange="bindEvent()"></select>
-        </div>
-        <div style="align-self:end">
-          <span class="pill">Max per land: <span id="maxPer">0</span></span>
-        </div>
+        <div><label>Sport</label><select id="sportSel" onchange="fillEvents()"></select></div>
+        <div><label>Event</label><select id="eventSel" onchange="bindEvent()"></select></div>
+        <div style="align-self:end"><span class="pill">Max per land: <span id="maxPer">0</span></span></div>
       </div>
-      <div class="status" id="st-ev"></div>
-      <div class="errorbox" id="err-ev"></div>
+      <div class="status" id="st-ev"></div><div class="errorbox" id="err-ev"></div>
     </section>
 
     <section class="card">
@@ -77,8 +68,7 @@
         <thead><tr><th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Actie</th></tr></thead>
         <tbody id="ath-body"><tr><td colspan="4" class="muted">Kies een event hierboven…</td></tr></tbody>
       </table>
-      <div class="status" id="st-ath"></div>
-      <div class="errorbox" id="err-ath"></div>
+      <div class="status" id="st-ath"></div><div class="errorbox" id="err-ath"></div>
     </section>
 
     <section class="card">
@@ -90,178 +80,124 @@
         <thead><tr><th>Atleet</th><th>Rating</th><th>Status</th><th>Actie</th></tr></thead>
         <tbody id="reg-body"><tr><td colspan="4" class="muted">Nog geen inschrijvingen</td></tr></tbody>
       </table>
-      <div class="status" id="st-reg"></div>
-      <div class="errorbox" id="err-reg"></div>
+      <div class="status" id="st-reg"></div><div class="errorbox" id="err-reg"></div>
     </section>
   </div>
 </div>
 
 <script>
-  // ===== Supabase setup =====
   var SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
   var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // ===== state =====
   var sessionUser=null, sports=[], disciplines=[], events=[], mapDiscBySport={}, mapEvByDisc={};
   var myAthletes=[], myCountryId=null, curEvent=null, regs=[];
 
-  // ===== helpers =====
   function el(id){ return document.getElementById(id); }
   function setStatus(id,t){ el(id).textContent=t||''; }
   function showErr(id,m){ var b=el(id); b.style.display=m?'block':'none'; b.textContent=m||''; }
-  function showAuth(){ el('auth-warning').style.display=''; el('app').style.display='none'; }
-  function showApp(){ el('auth-warning').style.display='none'; el('app').style.display=''; }
   function logout(){ sb.auth.signOut().then(()=>location.href='index.html'); }
 
-  sb.auth.onAuthStateChange((_e,s)=>{ if(s){ boot(); } else { showAuth(); } });
-  boot();
-
-  function boot(){
-    sb.auth.getSession().then(r=>{
-      sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
-      if(!sessionUser){ showAuth(); return; }
-      showApp();
-      refreshAll();
-    });
-  }
+  sb.auth.getSession().then(r=>{
+    sessionUser = r.data?.session?.user;
+    if(!sessionUser){ document.getElementById('auth-warning').style.display=''; return; }
+    document.getElementById('app').style.display='';
+    refreshAll();
+  });
 
   function refreshAll(){
     loadTaxonomy().then(()=>{ fillSports(); fillEvents(); bindEvent(); });
     loadManagerMeta().then(()=>loadAthletes()).then(()=>loadRegistrations());
   }
 
-  // ===== data loads =====
   function loadManagerMeta(){
     return sb.from('managers').select('country_id').eq('user_id', sessionUser.id).single()
       .then(r=>{ if(!r.error && r.data){ myCountryId=r.data.country_id; } });
   }
-
   function loadTaxonomy(){
     return Promise.all([
       sb.from('sports').select('id,name').order('name'),
       sb.from('disciplines').select('id,name,sport_id').order('name'),
       sb.from('events').select('id,name,discipline_id,gender,is_active,max_athletes_per_country').eq('is_active',true).order('name')
     ]).then(arr=>{
-      var sp=arr[0], di=arr[1], ev=arr[2];
-      if(sp.error||di.error||ev.error){ showErr('err-ev',(sp.error&&sp.error.message)||(di.error&&di.error.message)||(ev.error&&ev.error.message)); return; }
-      sports=sp.data||[]; disciplines=di.data||[]; events=ev.data||[];
+      sports=arr[0].data||[]; disciplines=arr[1].data||[]; events=arr[2].data||[];
       mapDiscBySport={}; mapEvByDisc={};
       disciplines.forEach(d=>{ (mapDiscBySport[d.sport_id]||(mapDiscBySport[d.sport_id]=[])).push(d); });
       events.forEach(e=>{ (mapEvByDisc[e.discipline_id]||(mapEvByDisc[e.discipline_id]=[])).push(e); });
     });
   }
-
   function loadAthletes(){
     setStatus('st-ath','Laden…'); showErr('err-ath','');
     return sb.from('athletes').select('id,sport,event,rating,stats,manager_id').eq('manager_id', sessionUser.id).order('created_at',{ascending:false})
-      .then(r=>{
-        if(r.error){ showErr('err-ath', r.error.message||String(r.error)); setStatus('st-ath',''); return; }
-        myAthletes=r.data||[]; renderAthletes(); setStatus('st-ath','');
-      });
+      .then(r=>{ if(r.error){ showErr('err-ath', r.error.message); setStatus('st-ath',''); return; } myAthletes=r.data||[]; renderAthletes(); setStatus('st-ath',''); });
   }
-
   function loadRegistrations(){
-    if(!curEvent){ return Promise.resolve(); }
+    if(!curEvent) return Promise.resolve();
     setStatus('st-reg','Laden…'); showErr('err-reg','');
-    return sb.from('registrations').select('id,athlete_id,manager_id,country_id,status,created_at')
-      .eq('event_id', curEvent.id)
-      .order('created_at',{ascending:true})
-      .then(r=>{
-        if(r.error){ showErr('err-reg', r.error.message||String(r.error)); setStatus('st-reg',''); return; }
-        regs = r.data||[];
-        renderRegs();
-        setStatus('st-reg','');
-      });
+    return sb.from('registrations').select('id,athlete_id,manager_id,country_id,status,created_at').eq('event_id', curEvent.id).order('created_at',{ascending:true})
+      .then(r=>{ if(r.error){ showErr('err-reg', r.error.message); setStatus('st-reg',''); return; } regs = r.data||[]; renderRegs(); setStatus('st-reg',''); });
   }
 
-  // ===== UI binders =====
-  function fillSports(){
-    var s=el('sportSel'); s.innerHTML='';
-    for(var i=0;i<sports.length;i++){ var o=document.createElement('option'); o.value=sports[i].id; o.textContent=sports[i].name; s.appendChild(o); }
-  }
-
+  function fillSports(){ var s=el('sportSel'); s.innerHTML=''; sports.forEach(sp=>{ var o=document.createElement('option'); o.value=sp.id; o.textContent=sp.name; s.appendChild(o); }); }
   function fillEvents(){
-    var sportId=parseInt(el('sportSel').value||'0',10), eSel=el('eventSel'); eSel.innerHTML='';
-    var dlist=mapDiscBySport[sportId]||[], evs=[];
-    for(var i=0;i<dlist.length;i++){ var arr=mapEvByDisc[dlist[i].id]||[]; Array.prototype.push.apply(evs, arr); }
-    for(i=0;i<evs.length;i++){ var o=document.createElement('option'); o.value=evs[i].id; o.textContent=evs[i].name + (evs[i].gender?(' ('+evs[i].gender+')'):''); eSel.appendChild(o); }
+    var sid=parseInt(el('sportSel').value||'0',10), eSel=el('eventSel'); eSel.innerHTML='';
+    var dlist=mapDiscBySport[sid]||[], evs=[]; dlist.forEach(d=>{ (mapEvByDisc[d.id]||[]).forEach(e=>evs.push(e)); });
+    evs.forEach(e=>{ var o=document.createElement('option'); o.value=e.id; o.textContent=e.name+(e.gender?(' ('+e.gender+')'):''); eSel.appendChild(o); });
   }
-
   function bindEvent(){
     var id=parseInt(el('eventSel').value||'0',10); curEvent=null;
     for(var i=0;i<events.length;i++){ if(events[i].id===id){ curEvent=events[i]; break; } }
-    el('maxPer').textContent = curEvent && curEvent.max_athletes_per_country ? curEvent.max_athletes_per_country : 0;
-    renderAthletes();
-    loadRegistrations();
+    el('maxPer').textContent = curEvent?.max_athletes_per_country || 0;
+    renderAthletes(); loadRegistrations();
   }
 
   function renderAthletes(){
     var body=el('ath-body'); body.innerHTML='';
     if(!curEvent){ body.innerHTML='<tr><td colspan="4" class="muted">Kies een event hierboven…</td></tr>'; return; }
     var q=(el('qAth').value||'').toLowerCase();
-    var list=myAthletes.filter(a=>{
-      return !q || (a.sport||'').toLowerCase().indexOf(q)>-1 || (a.event||'').toLowerCase().indexOf(q)>-1;
-    });
+    var list=myAthletes.filter(a=> !q || (a.sport||'').toLowerCase().includes(q) || (a.event||'').toLowerCase().includes(q));
     if(!list.length){ body.innerHTML='<tr><td colspan="4" class="muted">Geen atleten</td></tr>'; return; }
-    // welk event? we laten alle atleten zien; je kunt ook filteren op sport match als je wilt.
-    for(var i=0;i<list.length;i++){
-      var a=list[i];
+    list.forEach(a=>{
       var tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td>'+esc(a.sport||'')+'</td>'+
-        '<td>'+esc(a.event||'')+'</td>'+
-        '<td>'+Number(a.rating||0).toFixed(1)+'</td>'+
-        '<td><button class="btn" onclick="registerAth(\''+a.id+'\')">Inschrijven</button></td>';
+      tr.innerHTML='<td>'+esc(a.sport||'')+'</td><td>'+esc(a.event||'')+'</td><td>'+Number(a.rating||0).toFixed(1)+'</td><td><button class="btn" onclick="registerAth(\''+a.id+'\')">Inschrijven</button></td>';
       body.appendChild(tr);
-    }
+    });
   }
-
   function renderRegs(){
     var body=el('reg-body'); body.innerHTML='';
     var mine = regs.filter(r=> r.country_id===myCountryId && r.manager_id===sessionUser.id );
     el('countReg').textContent = String(mine.length);
     if(!regs.length){ body.innerHTML='<tr><td colspan="4" class="muted">Nog geen inschrijvingen</td></tr>'; return; }
-
-    // map athletes -> voor naam/rating
-    var mapA={}; for(var i=0;i<myAthletes.length;i++){ mapA[myAthletes[i].id]=myAthletes[i]; }
-    for(i=0;i<regs.length;i++){
-      var r=regs[i]; var a=mapA[r.athlete_id];
+    var mapA={}; myAthletes.forEach(a=>mapA[a.id]=a);
+    regs.forEach(r=>{
+      var a=mapA[r.athlete_id];
       var tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td>'+esc(a ? ((a.sport||'')+' — '+(a.event||'')) : r.athlete_id)+'</td>'+
-        '<td>'+(a? Number(a.rating||0).toFixed(1) : '—')+'</td>'+
-        '<td>'+esc(r.status)+'</td>'+
-        '<td>'+(r.manager_id===sessionUser.id ? '<button class="btn bad" onclick="withdraw(\''+r.id+'\')">Uitschrijven</button>' : '<span class="muted">—</span>')+'</td>';
+      tr.innerHTML='<td>'+esc(a ? ((a.sport||'')+' — '+(a.event||'')) : r.athlete_id)+'</td><td>'+(a? Number(a.rating||0).toFixed(1) : '—')+'</td><td>'+esc(r.status)+'</td><td>'+(r.manager_id===sessionUser.id?'<button class="btn bad" onclick="withdraw(\''+r.id+'\')">Uitschrijven</button>':'<span class="muted">—</span>')+'</td>';
       body.appendChild(tr);
-    }
+    });
   }
 
-  // ===== actions =====
   function registerAth(athleteId){
     if(!curEvent){ alert('Kies eerst een event.'); return; }
     setStatus('st-ath','Inschrijven…'); showErr('err-ath','');
     sb.rpc('register_athlete_for_event', { p_manager_id: sessionUser.id, p_athlete_id: athleteId, p_event_id: curEvent.id })
       .then(r=>{
-        if(r.error){ showErr('err-ath', r.error.message||String(r.error)); setStatus('st-ath',''); return; }
-        if(!r.data || !r.data.ok){ showErr('err-ath', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-ath',''); return; }
-        setStatus('st-ath','Ingeschreven!'); setTimeout(()=>setStatus('st-ath',''), 1000);
+        if(r.error){ showErr('err-ath', r.error.message); setStatus('st-ath',''); return; }
+        if(!r.data?.ok){ showErr('err-ath', r.data?.message || 'Onbekende fout'); setStatus('st-ath',''); return; }
+        setStatus('st-ath','Ingeschreven!'); setTimeout(()=>setStatus('st-ath',''), 800);
         loadRegistrations();
       });
   }
-
   function withdraw(regId){
     setStatus('st-reg','Uitschrijven…'); showErr('err-reg','');
     sb.rpc('withdraw_registration', { p_manager_id: sessionUser.id, p_registration_id: regId })
       .then(r=>{
-        if(r.error){ showErr('err-reg', r.error.message||String(r.error)); setStatus('st-reg',''); return; }
-        if(!r.data || !r.data.ok){ showErr('err-reg', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-reg',''); return; }
-        setStatus('st-reg','Teruggetrokken'); setTimeout(()=>setStatus('st-reg',''), 1000);
+        if(r.error){ showErr('err-reg', r.error.message); setStatus('st-reg',''); return; }
+        if(!r.data?.ok){ showErr('err-reg', r.data?.message || 'Onbekende fout'); setStatus('st-reg',''); return; }
+        setStatus('st-reg','Teruggetrokken'); setTimeout(()=>setStatus('st-reg',''), 800);
         loadRegistrations();
       });
   }
 
-  // ===== utils =====
   function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 </script>
 </body>
