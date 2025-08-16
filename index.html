@@ -1,246 +1,135 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Multisport-Manager</title>
+  <title>Multisport-Manager • Home</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;color:#fff;margin:0;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
-    header{padding:20px;background:#00000033;font-size:1.6rem;font-weight:700;text-align:center}
-    .container{max-width:420px;margin:28px auto;background:#ffffff0f;padding:20px;border-radius:14px;border:1px solid #ffffff22}
-    h2{margin:6px 0 8px}
-    input{width:100%;padding:10px;margin:8px 0;border:1px solid #ffffff22;border-radius:10px;background:#ffffff14;color:#fff}
-    button{padding:11px 12px;width:100%;border:none;border-radius:10px;background:#e63946;color:#fff;font-weight:700;cursor:pointer}
-    button:hover{filter:brightness(1.05)}
-    .logout-btn{background:#2a9d8f}
-    .hidden{display:none}
-    .links a{display:inline-block;margin-right:8px;margin-bottom:8px;color:#fff;text-decoration:none;padding:8px 12px;background:#ffffff1a;border-radius:10px}
-    .status{margin-top:8px;font-size:.9rem;color:#ffffffcc;min-height:1.2em;white-space:pre-line}
-    .errorbox{margin-top:10px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
+    header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
+    header a:hover, header button:hover{background:#ffffff2a}
+    .wrap{max-width:980px;margin:20px auto;padding:0 14px}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:14px}
+    @media(max-width:800px){.grid2{display:block}}
+    .card{background:#ffffff12;border:1px solid #ffffff22;border-radius:14px;padding:14px}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
+    .btn{display:inline-block;padding:10px 12px;border:0;border-radius:10px;cursor:pointer;background:#2a9d8f;color:#fff;font-weight:700}
+    .muted{color:#ffffffc7}
+    .status{margin-top:6px;min-height:1.1em}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <header>🏆 Multisport-Manager</header>
+<header>
+  <div>
+    <span style="opacity:.85">Multisport-Manager</span>
+  </div>
+  <div id="nav-guest">
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
+  </div>
+  <div id="nav-user" style="display:none">
+    <a href="manager.html">Manager</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
+    <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <button onclick="logout()">Uitloggen</button>
+  </div>
+</header>
 
-  <div class="container" id="auth-section">
-    <h2>Inloggen</h2>
-    <input type="email" id="login-email" placeholder="E-mail" autocomplete="username" />
-    <input type="password" id="login-password" placeholder="Wachtwoord" autocomplete="current-password" />
-    <button onclick="login()">Inloggen</button>
-
-    <h2 style="margin-top:18px">Registreren</h2>
-    <input type="text" id="signup-name" placeholder="Managernaam" />
-    <input type="email" id="signup-email" placeholder="E-mail" autocomplete="email" />
-    <input type="password" id="signup-password" placeholder="Wachtwoord" autocomplete="new-password" />
-    <button onclick="signup()">Registreren</button>
-
-    <div class="status" id="status"></div>
-    <div class="errorbox" id="errbox"></div>
+<div class="wrap">
+  <div class="card">
+    <h1 style="margin-top:0">Welkom</h1>
+    <p class="muted">Log in of maak een account aan. Na inloggen ga je naar je <b>Manager</b>-dashboard. Admin bereikt de <b>Admin</b>-pagina via de knop in de header.</p>
   </div>
 
-  <div class="container hidden" id="profile-section">
-    <h2>Welkom, <span id="manager-name"></span>!</h2>
-    <p>Land: <span id="manager-country"></span></p>
-    <p>MP: <span id="manager-mp"></span></p>
+  <div class="grid2">
+    <section class="card">
+      <h2 style="margin:0">Inloggen</h2>
+      <div style="margin-top:8px">
+        <input id="li-email" type="email" placeholder="E-mail"/>
+      </div>
+      <div style="margin-top:8px">
+        <input id="li-pass" type="password" placeholder="Wachtwoord"/>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn" onclick="login()">Inloggen</button>
+      </div>
+      <div class="status" id="st-li"></div>
+    </section>
 
-    <div class="links">
-      <a href="manager.html">Naar managerprofiel</a>
-      <a href="admin.html" id="admin-link" style="display:none">Admin</a>
-    </div>
-
-    <button class="logout-btn" onclick="logout()">Uitloggen</button>
-    <div class="status" id="status-in"></div>
-    <div class="errorbox" id="errbox-in"></div>
+    <section class="card">
+      <h2 style="margin:0">Registreren</h2>
+      <div style="margin-top:8px">
+        <input id="rg-email" type="email" placeholder="E-mail"/>
+      </div>
+      <div style="margin-top:8px">
+        <input id="rg-pass" type="password" placeholder="Wachtwoord (min. 6 tekens)"/>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn" onclick="register()">Account maken</button>
+      </div>
+      <div class="status" id="st-rg"></div>
+    </section>
   </div>
 
-  <script>
-    // ===== Foutmonitor: toon JS-fouten op de pagina =====
-    window.onerror = function (msg, src, line, col, err) {
-      var box = document.getElementById('errbox');
-      box.style.display = 'block';
-      box.textContent = 'JS-fout: ' + msg + ' @ ' + (src||'') + ':' + (line||'?');
-    };
+  <section class="card">
+    <h2 style="margin-top:0">Snelstart</h2>
+    <ol class="muted">
+      <li>Registreer of log in.</li>
+      <li>Admin wijst je een land toe (of maakt landen aan in Admin → Landen).</li>
+      <li>Ga naar <b>Scouten</b> om je eerste atleten te maken.</li>
+      <li>Ga naar <b>Inschrijven</b> om ze aan onderdelen toe te voegen.</li>
+      <li>Admin: bevestig inschrijvingen → maak startlijsten → simuleer dag → check resultaten & MP.</li>
+    </ol>
+  </section>
+</div>
 
-    // ===== Supabase client =====
-    if (!window.supabase) {
-      alert("Kon Supabase library niet laden (unpkg geblokkeerd?).");
+<script>
+  const SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
+  const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  const ADMIN_EMAIL="wilcoboesveld12@hotmail.com";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function el(id){return document.getElementById(id)}
+  function setSt(id,t){el(id).textContent=t||''}
+
+  sb.auth.getSession().then(r=>{
+    const user=r.data?.session?.user;
+    if(user){ el('nav-guest').style.display='none'; el('nav-user').style.display=''; }
+  });
+
+  function logout(){ sb.auth.signOut().then(()=>location.reload()); }
+
+  async function login(){
+    setSt('st-li','Bezig met inloggen…');
+    const email=el('li-email').value.trim(), pass=el('li-pass').value;
+    const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+    if(error){ setSt('st-li','Error: '+error.message); return; }
+    setSt('st-li','Gelukt! Doorsturen…');
+    const u=data.user;
+    if(u?.email?.toLowerCase()===ADMIN_EMAIL){ location.href='admin.html'; } else { location.href='manager.html'; }
+  }
+
+  async function register(){
+    setSt('st-rg','Account aanmaken…');
+    const email=el('rg-email').value.trim(), pass=el('rg-pass').value;
+    const {data, error} = await sb.auth.signUp({email, password:pass});
+    if(error){ setSt('st-rg','Error: '+error.message); return; }
+    // manager-row maken + start MP
+    const uid=data.user?.id;
+    if(uid){
+      await sb.from('managers').upsert({user_id:uid, email:email, mp: (await getStartMP()) });
     }
-    var SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
-    var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-    var ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
-    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    setSt('st-rg','Aangemaakt! Je kunt nu inloggen.');
+  }
 
-    // ===== helpers =====
-    function el(id){ return document.getElementById(id); }
-    function setStatus(t){ el('status').textContent = t || ''; }
-    function setStatusIn(t){ el('status-in').textContent = t || ''; }
-    function showAuth(){ el('auth-section').classList.remove('hidden'); el('profile-section').classList.add('hidden'); }
-    function showProfile(){ el('auth-section').classList.add('hidden'); el('profile-section').classList.remove('hidden'); }
-    function showErr(id, msg){
-      var b = el(id);
-      b.style.display = msg ? 'block' : 'none';
-      b.textContent = msg || '';
-    }
-
-    var pollTimer = null;
-    function startSessionPoll(hint){
-      clearInterval(pollTimer);
-      setStatus(hint || 'Wachten op sessie…');
-      pollTimer = setInterval(function(){
-        sb.auth.getSession().then(function(res){
-          var session = res && res.data && res.data.session;
-          if (session){
-            clearInterval(pollTimer);
-            afterSignedIn(session);
-          }
-        });
-      }, 2000);
-    }
-
-    // ===== Signup/Login/Logout =====
-    function signup() {
-      try {
-        setStatus("Registreren…"); showErr('errbox','');
-        var name = (el('signup-name').value || '').trim();
-        var email = (el('signup-email').value || '').trim();
-        var password = el('signup-password').value || '';
-        if (!name || !email || !password){ setStatus("Vul alle velden in."); return; }
-
-        sb.auth.signUp({ email: email, password: password, options: { emailRedirectTo: window.location.href } })
-          .then(function(r){
-            if (r.error){ throw r.error; }
-            // Probeer direct sign-in (als confirmatie uit staat)
-            return sb.auth.signInWithPassword({ email: email, password: password });
-          })
-          .then(function(){
-            return sb.auth.getSession();
-          })
-          .then(function(r){
-            var session = r && r.data && r.data.session;
-            if (session) {
-              afterSignedIn(session);
-              setStatus("");
-              alert("Account aangemaakt! Je bent ingelogd.");
-            } else {
-              setStatus("Account aangemaakt. Check je e-mail om te bevestigen.");
-              startSessionPoll("Account aangemaakt. Wacht op e-mailbevestiging/sessie…");
-            }
-          })
-          .catch(function(e){
-            setStatus("Fout bij registreren: " + (e && e.message ? e.message : e));
-            showErr('errbox', "Registreren error: " + (e && e.message ? e.message : e));
-            alert("Fout bij registreren: " + (e && e.message ? e.message : e));
-          });
-      } catch (e) {
-        setStatus("Fout bij registreren: " + e);
-        showErr('errbox', "Registreren error: " + e);
-      }
-    }
-
-    function login() {
-      try {
-        setStatus("Inloggen…"); showErr('errbox','');
-        var email = (el('login-email').value || '').trim();
-        var password = el('login-password').value || '';
-        if (!email || !password){ setStatus("Vul e-mail en wachtwoord in."); return; }
-
-        sb.auth.signInWithPassword({ email: email, password: password })
-          .then(function(r){
-            if (r.error){ throw r.error; }
-            return sb.auth.getSession();
-          })
-          .then(function(r){
-            var session = r && r.data && r.data.session;
-            if (session){ afterSignedIn(session); setStatus(""); }
-            else { startSessionPoll("Inloggen gelukt, wacht op sessie…"); }
-          })
-          .catch(function(e){
-            setStatus("Fout bij inloggen: " + (e && e.message ? e.message : e));
-            showErr('errbox', "Login error: " + (e && e.message ? e.message : e));
-            alert("Fout bij inloggen: " + (e && e.message ? e.message : e));
-          });
-      } catch (e) {
-        setStatus("Fout bij inloggen: " + e);
-        showErr('errbox', "Login error: " + e);
-      }
-    }
-
-    function logout() {
-      sb.auth.signOut().then(function(){
-        showAuth();
-        setStatus("Je bent uitgelogd."); setStatusIn("");
-        showErr('errbox',''); showErr('errbox-in','');
-        clearInterval(pollTimer);
-      });
-    }
-
-    // ===== Init manager als nodig =====
-    function safeInitManager(userId, displayName, cb) {
-      // check of profiel bestaat
-      sb.from('my_profile').select('user_id').eq('user_id', userId)
-        .maybeSingle()
-        .then(function(r){
-          if (r && r.data){ if(cb) cb(); return null; }
-          return sb.rpc('init_manager', { p_user_id: userId, p_display_name: displayName || 'Manager' })
-        })
-        .then(function(res){
-          if (res && res.error){
-            showErr('errbox-in', "init_manager error: " + (res.error.message || res.error));
-            alert('Kon manager niet initialiseren: ' + (res.error.message || res.error));
-          }
-          if (cb) cb();
-        })
-        .catch(function(e){
-          showErr('errbox-in', "init_manager error: " + (e && e.message ? e.message : e));
-          alert('Kon manager niet initialiseren: ' + (e && e.message ? e.message : e));
-        });
-    }
-
-    // ===== Na inloggen: init + profiel =====
-    function afterSignedIn(session){
-      var email = (session && session.user && session.user.email) ? session.user.email : '';
-      var nameTyped = (el('signup-name') && el('signup-name').value) ? el('signup-name').value.trim() : '';
-      var displayName = nameTyped || (email ? email.split('@')[0] : 'Manager');
-
-      safeInitManager(session.user.id, displayName, function(){ loadProfile(); });
-    }
-
-    function loadProfile(){
-      sb.auth.getSession().then(function(r){
-        var session = r && r.data && r.data.session;
-        if (!session){ showAuth(); return; }
-
-        sb.from('my_profile').select('*').eq('user_id', session.user.id).single()
-          .then(function(res){
-            if (res.error){
-              setStatusIn("Kon profiel niet laden.");
-              showErr('errbox-in', "Profiel error: " + (res.error.message || res.error));
-              showAuth();
-              return;
-            }
-            var data = res.data || {};
-            el('manager-name').textContent = data.display_name || '';
-            el('manager-country').textContent = data.country_name || 'Onbekend';
-            el('manager-mp').textContent = (typeof data.mp === 'number') ? data.mp : 0;
-
-            // Admin link
-            var isAdmin = (session.user && session.user.email && session.user.email.toLowerCase() === ADMIN_EMAIL);
-            el('admin-link').style.display = isAdmin ? 'inline-block' : 'none';
-
-            setStatus(""); setStatusIn(""); showErr('errbox',''); showErr('errbox-in','');
-            showProfile();
-          });
-      });
-    }
-
-    // Sessie events
-    sb.auth.onAuthStateChange(function(_event, session){
-      if (session){ clearInterval(pollTimer); afterSignedIn(session); }
-    });
-
-    // Bij load: toon profiel indien al ingelogd
-    loadProfile();
-  </script>
+  async function getStartMP(){
+    const r=await sb.from('app_config').select('starting_mp').limit(1).maybeSingle();
+    return r.data?.starting_mp ?? 100;
+  }
+</script>
 </body>
 </html>
