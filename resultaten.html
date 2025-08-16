@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resultaten & Medailles • Multisport-Manager</title>
+  <style>
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
+    header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
+    header a:hover, header button:hover{background:#ffffff2a}
+    .wrap{max-width:1100px;margin:20px auto;padding:0 14px}
+    .card{background:#ffffff12;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(200px,1fr));gap:10px}
+    @media(max-width:900px){.grid3{display:block}}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left}
+    .muted{color:#ffffffc7}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f}
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <div class="row">
+    <a href="index.html">Home</a>
+    <a href="manager.html">Manager</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
+    <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
+  </div>
+  <div class="row"><button onclick="logout()">Uitloggen</button></div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="grid3">
+      <div>
+        <label>Sport</label>
+        <select id="sp"></select>
+      </div>
+      <div>
+        <label>Event</label>
+        <select id="ev" onchange="loadLatestRound()"></select>
+      </div>
+      <div style="align-self:end">
+        <span class="pill" id="meta">—</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin:0">Laatste ronde — Uitslag</h2>
+    <table style="margin-top:8px">
+      <thead><tr><th>Rank</th><th>Atleet</th><th>Land</th><th>Score</th></tr></thead>
+      <tbody id="res-body"><tr><td colspan="4" class="muted">Kies sport & event…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2 style="margin:0">Medaillespiegel</h2>
+    <table style="margin-top:8px">
+      <thead><tr><th>Land</th><th>Goud</th><th>Zilver</th><th>Brons</th><th>Totaal</th></tr></thead>
+      <tbody id="med-body"><tr><td colspan="5" class="muted">Laden…</td></tr></tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+  const URL="https://mbrehhloxonpnihetuij.supabase.co";
+  const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  const sb = window.supabase.createClient(URL, KEY);
+  let sports=[], disciplines=[], events=[], mapDiscBySport={}, mapEvByDisc={};
+
+  function el(id){return document.getElementById(id)}
+  function logout(){ sb.auth.signOut().then(()=>location.href='index.html') }
+
+  Promise.all([
+    sb.from('sports').select('id,name').order('name'),
+    sb.from('disciplines').select('id,name,sport_id').order('name'),
+    sb.from('events').select('id,name,discipline_id,gender').order('name')
+  ]).then(arr=>{
+    sports=arr[0].data||[]; disciplines=arr[1].data||[]; events=arr[2].data||[];
+    disciplines.forEach(d=>{ (mapDiscBySport[d.sport_id]||(mapDiscBySport[d.sport_id]=[])).push(d); });
+    events.forEach(e=>{ (mapEvByDisc[e.discipline_id]||(mapEvByDisc[e.discipline_id]=[])).push(e); });
+    fillSports(); fillEvents(); loadLatestRound(); loadMedals();
+  });
+
+  function fillSports(){ const s=el('sp'); s.innerHTML=''; sports.forEach(sp=>{ const o=document.createElement('option'); o.value=sp.id; o.textContent=sp.name; s.appendChild(o); }); s.onchange=()=>{fillEvents(); loadLatestRound();} }
+  function fillEvents(){
+    const sid=parseInt(el('sp').value||'0',10), sel=el('ev'); sel.innerHTML='';
+    const dlist=mapDiscBySport[sid]||[]; let evs=[]; dlist.forEach(d=>{ (mapEvByDisc[d.id]||[]).forEach(e=>evs.push(e)); });
+    evs.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.textContent=e.name+(e.gender?(' ('+e.gender+')'):''); sel.appendChild(o); });
+  }
+
+  function loadLatestRound(){
+    const evId=parseInt(el('ev').value||'0',10), body=el('res-body'); body.innerHTML='';
+    if(!evId){ body.innerHTML='<tr><td colspan="4" class="muted">Kies sport & event…</td></tr>'; el('meta').textContent='—'; return; }
+    sb.from('event_rounds').select('id,name,order_index').eq('event_id',evId).order('order_index',{ascending:false}).limit(1).single().then(async rr=>{
+      if(rr.error || !rr.data){ body.innerHTML='<tr><td colspan="4" class="muted">Geen rondes (admin moet aanmaken)</td></tr>'; el('meta').textContent='—'; return; }
+      el('meta').textContent = rr.data.name + ' (#'+rr.data.order_index+')';
+      const rid=rr.data.id;
+      const res=await sb.from('results').select('athlete_id,country_id,score,rank').eq('round_id',rid).order('rank');
+      if(res.error){ body.innerHTML='<tr><td colspan="4" class="muted">Nog geen resultaten</td></tr>'; return; }
+      const rows=res.data||[]; if(!rows.length){ body.innerHTML='<tr><td colspan="4" class="muted">Nog geen resultaten</td></tr>'; return; }
+      const aIds=rows.map(x=>x.athlete_id), cIds=rows.map(x=>x.country_id);
+      const [A,C]=await Promise.all([
+        sb.from('athletes').select('id,sport,event').in('id',aIds),
+        sb.from('countries').select('id,name,code').in('id',cIds)
+      ]);
+      const mapA={}, mapC={}; (A.data||[]).forEach(x=>mapA[x.id]=x); (C.data||[]).forEach(x=>mapC[x.id]=x);
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td>'+r.rank+'</td><td>'+esc(mapA[r.athlete_id]?(mapA[r.athlete_id].sport+' — '+mapA[r.athlete_id].event):r.athlete_id)+'</td><td>'+esc(mapC[r.country_id]?.name||r.country_id)+'</td><td>'+Number(r.score).toFixed(3)+'</td>';
+        body.appendChild(tr);
+      });
+    });
+  }
+
+  function loadMedals(){
+    // Tellen per land
+    sb.from('medals').select('gold_country_id,silver_country_id,bronze_country_id').then(async r=>{
+      const rows=r.data||[]; if(!rows.length){ el('med-body').innerHTML='<tr><td colspan="5" class="muted">Nog geen medailles</td></tr>'; return; }
+      const ids=[...new Set(rows.flatMap(x=>[x.gold_country_id,x.silver_country_id,x.bronze_country_id].filter(Boolean)))];
+      const C=await sb.from('countries').select('id,name,code').in('id',ids);
+      const mapC={}; (C.data||[]).forEach(x=>mapC[x.id]=x);
+      const tally={};
+      rows.forEach(x=>{
+        if(x.gold_country_id)  tally[x.gold_country_id]=(tally[x.gold_country_id]||{g:0,s:0,b:0}); if(x.gold_country_id)  tally[x.gold_country_id].g++;
+        if(x.silver_country_id)tally[x.silver_country_id]=(tally[x.silver_country_id]||{g:0,s:0,b:0}); if(x.silver_country_id)tally[x.silver_country_id].s++;
+        if(x.bronze_country_id)tally[x.bronze_country_id]=(tally[x.bronze_country_id]||{g:0,s:0,b:0}); if(x.bronze_country_id)tally[x.bronze_country_id].b++;
+      });
+      const body=el('med-body'); body.innerHTML='';
+      Object.entries(tally).sort((a,b)=> (b[1].g - a[1].g) || (b[1].s - a[1].s) || (b[1].b - a[1].b)).forEach(([cid,t])=>{
+        const c=mapC[cid]; const tr=document.createElement('tr');
+        tr.innerHTML='<td>'+esc(c?.name||cid)+'</td><td>'+t.g+'</td><td>'+t.s+'</td><td>'+t.b+'</td><td>'+(t.g+t.s+t.b)+'</td>';
+        body.appendChild(tr);
+      });
+    });
+  }
+
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+</script>
+</body>
+</html>
