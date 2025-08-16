@@ -6,20 +6,19 @@
   <title>Scouten • Multisport-Manager</title>
   <style>
     body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
-    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
     header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
     header a:hover, header button:hover{background:#ffffff2a}
     .wrap{max-width:900px;margin:20px auto;padding:0 14px}
-    .card{background:#ffffff10;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .card{background:#ffffff12;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:10px}
+    @media(max-width:820px){.grid3{display:block}}
     input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
-    .btn{display:inline-block;padding:10px 12px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#e63946;color:#fff}
-    .status{margin-top:6px;font-size:.9rem;color:#ffffffcc;min-height:1.1em;white-space:pre-line}
-    .errorbox{margin-top:8px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
-    .muted{color:#ffffffb5}
+    .btn{padding:8px 12px;border-radius:10px;border:0;background:#2a9d8f;color:#fff;cursor:pointer}
+    .muted{color:#ffffffc7}
+    .status{min-height:1.1em;margin-top:6px}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left;font-size:.95rem}
-    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.85rem}
+    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -28,11 +27,13 @@
   <div class="row">
     <a href="index.html">Home</a>
     <a href="manager.html">Manager</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
+    <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
   </div>
-  <div class="row">
-    <button onclick="refreshAll()">⟳ Vernieuwen</button>
-    <button onclick="logout()">Uitloggen</button>
-  </div>
+  <div class="row"><button onclick="logout()">Uitloggen</button></div>
 </header>
 
 <div class="wrap">
@@ -43,161 +44,89 @@
 
   <div id="app" style="display:none">
     <section class="card">
-      <h2 style="margin:0">Scouten</h2>
-      <div class="row" style="margin-top:8px">
-        <select id="sportSel" style="flex:1;min-width:180px" onchange="fillEvents()">
-          <option value="">— kies sport —</option>
-        </select>
-        <select id="eventSel" style="flex:2;min-width:220px">
-          <option value="">— kies onderdeel —</option>
-        </select>
-        <label class="pill">Kosten: <span id="cost">20</span> MP</label>
-        <span class="pill">MP: <span id="mp">0</span></span>
-        <button class="btn" onclick="scout()">Scout</button>
+      <h2 style="margin:0">Scout nieuwe atleet</h2>
+      <p class="muted">Kies de sport en (optioneel) een onderdeel. Kosten: <span id="cost">20</span> MP.</p>
+      <div class="grid3" style="margin-top:8px">
+        <div><label>Sport</label><select id="sport"></select></div>
+        <div><label>Event</label><select id="event"></select></div>
+        <div style="align-self:end"><button class="btn" onclick="scout()">Scouten</button></div>
       </div>
-      <div class="status" id="st-scout"></div>
-      <div class="errorbox" id="err-scout"></div>
+      <div id="st" class="status"></div>
     </section>
 
-    <section class="card" id="result" style="display:none">
-      <h2 style="margin:0">Nieuwe atleet</h2>
+    <section class="card">
+      <h2 style="margin:0">Laatste 10 atleten</h2>
       <table style="margin-top:8px">
-        <tbody>
-          <tr><th>Sport</th><td id="r-sport" class="muted">—</td></tr>
-          <tr><th>Onderdeel</th><td id="r-event" class="muted">—</td></tr>
-          <tr><th>Rating</th><td id="r-rating" class="muted">—</td></tr>
-          <tr><th>ID</th><td id="r-id" class="muted">—</td></tr>
-        </tbody>
+        <thead><tr><th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Cap</th><th>Tijd</th></tr></thead>
+        <tbody id="body"><tr><td colspan="5" class="muted">Nog niets</td></tr></tbody>
       </table>
     </section>
   </div>
 </div>
 
 <script>
-  if(!window.supabase){ alert("Kon Supabase library niet laden."); }
-  var SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
-  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  var sessionUser=null, events=[], sports=[], mpVal=0;
+  const URL="https://mbrehhloxonpnihetuij.supabase.co";
+  const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  const sb = window.supabase.createClient(URL, KEY);
+  let user=null, sports=[], disciplines=[], events=[], mapDiscBySport={}, mapEvByDisc={}, scoutCost=20;
 
-  function el(id){ return document.getElementById(id); }
-  function setStatus(id,t){ el(id).textContent=t||''; }
-  function showErr(id,m){ var b=el(id); b.style.display=m?'block':'none'; b.textContent=m||''; }
+  function el(id){return document.getElementById(id)}
+  function logout(){ sb.auth.signOut().then(()=>location.href='index.html') }
 
-  sb.auth.onAuthStateChange(function(_e,s){ if(s){ boot(); } else { showAuth(); } });
-  boot();
+  sb.auth.getSession().then(async r=>{
+    user=r.data?.session?.user; if(!user){ el('auth-warning').style.display=''; return; }
+    el('app').style.display='';
+    const c=await sb.from('app_settings').select('value').eq('key','scout_cost').maybeSingle();
+    if(!c.error && c.data){ scoutCost=parseInt(c.data.value||'20',10); el('cost').textContent=scoutCost; }
+    loadTax().then(()=>{ fillSports(); fillEvents(); });
+    loadRecent();
+  });
 
-  function showAuth(){ el('auth-warning').style.display=''; el('app').style.display='none'; }
-  function showApp(){ el('auth-warning').style.display='none'; el('app').style.display=''; }
-
-  function boot(){
-    sb.auth.getSession().then(function(r){
-      sessionUser = r && r.data && r.data.session ? r.data.session.user : null;
-      if(!sessionUser){ showAuth(); return; }
-      showApp();
-      refreshAll();
+  function loadTax(){
+    return Promise.all([
+      sb.from('sports').select('id,name').order('name'),
+      sb.from('disciplines').select('id,name,sport_id').order('name'),
+      sb.from('events').select('id,name,discipline_id,gender').order('name')
+    ]).then(arr=>{
+      sports=arr[0].data||[]; disciplines=arr[1].data||[]; events=arr[2].data||[];
+      mapDiscBySport={}; mapEvByDisc={};
+      disciplines.forEach(d=>{ (mapDiscBySport[d.sport_id]||(mapDiscBySport[d.sport_id]=[])).push(d); });
+      events.forEach(e=>{ (mapEvByDisc[e.discipline_id]||(mapEvByDisc[e.discipline_id]=[])).push(e); });
     });
   }
-
-  function refreshAll(){ loadSettings(); loadMP(); loadEvents(); }
-
-  function logout(){ sb.auth.signOut().then(function(){ window.location.href='index.html'; }); }
-
-  function loadSettings(){
-    // scout_cost uit app_settings
-    sb.from('app_settings').select('value').eq('key','scout_cost').single().then(function(r){
-      if(!r.error && r.data){ el('cost').textContent = parseInt(String(r.data.value)||'20',10); }
-    });
-  }
-
-  function loadMP(){
-    sb.from('managers').select('mp').eq('user_id', sessionUser.id).single().then(function(r){
-      if(!r.error){ mpVal = r.data.mp||0; el('mp').textContent = mpVal; }
-    });
-  }
-
-  function loadEvents(){
-    setStatus('st-scout','Laden…'); showErr('err-scout','');
-    sb.from('events').select('id,name,gender,discipline_id,is_active').eq('is_active', true)
-      .then(function(ev){
-        if(ev.error){ showErr('err-scout', ev.error.message||String(ev.error)); setStatus('st-scout',''); return; }
-        events = ev.data||[];
-        sb.from('disciplines').select('id,name,sport_id').then(function(disc){
-          if(disc.error){ showErr('err-scout', disc.error.message||String(disc.error)); setStatus('st-scout',''); return; }
-          var disciplines = disc.data||[];
-          sb.from('sports').select('id,name').then(function(sp){
-            if(sp.error){ showErr('err-scout', sp.error.message||String(sp.error)); setStatus('st-scout',''); return; }
-            sports = sp.data||[];
-            // bouw mapping sport -> eventnamen
-            fillSports(disciplines);
-            setStatus('st-scout','');
-          });
-        });
-      });
-  }
-
-  function fillSports(disciplines){
-    var sportSel = el('sportSel'); sportSel.innerHTML = '<option value="">— kies sport —</option>';
-    var map = {}; var i;
-    for(i=0;i<disciplines.length;i++){
-      var d = disciplines[i];
-      if(!map[d.sport_id]) map[d.sport_id] = [];
-      map[d.sport_id].push(d.id);
-    }
-    sportSel._discBySport = map;
-
-    for(i=0;i<sports.length;i++){
-      var s = sports[i]; var opt = document.createElement('option');
-      opt.value = s.id; opt.textContent = s.name; sportSel.appendChild(opt);
-    }
-    fillEvents(); // initial
-  }
-
+  function fillSports(){ const s=el('sport'); s.innerHTML=''; sports.forEach(sp=>{ const o=document.createElement('option'); o.value=sp.id; o.textContent=sp.name; s.appendChild(o); }) }
   function fillEvents(){
-    var eventSel = el('eventSel'); eventSel.innerHTML = '<option value="">— kies onderdeel —</option>';
-    var sportId = parseInt(el('sportSel').value||'0',10);
-    if(!sportId){ return; }
-
-    var discIds = el('sportSel')._discBySport[sportId]||[];
-    for(var i=0;i<events.length;i++){
-      var e = events[i];
-      if(discIds.indexOf(e.discipline_id)>-1){
-        var opt = document.createElement('option');
-        opt.value = e.name; // we geven event naam door
-        opt.textContent = e.name + ' ('+ (e.gender||'') +')';
-        eventSel.appendChild(opt);
-      }
-    }
+    const sid=parseInt(el('sport').value||'0',10), sel=el('event'); sel.innerHTML='';
+    const dlist=mapDiscBySport[sid]||[]; let evs=[]; dlist.forEach(d=>{ (mapEvByDisc[d.id]||[]).forEach(e=>evs.push(e)); });
+    evs.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.textContent=e.name+(e.gender?(' ('+e.gender+')'):''); sel.appendChild(o); });
   }
 
-  function sportNameById(id){
-    for(var i=0;i<sports.length;i++){ if(sports[i].id===id) return sports[i].name; }
-    return '';
+  async function scout(){
+    el('st').textContent='Scouten…';
+    const sid=parseInt(el('sport').value||'0',10), eid=parseInt(el('event').value||'0',10);
+    if(!sid || !eid){ el('st').textContent='Kies sport en event'; return; }
+    const sName = sports.find(x=>x.id===sid)?.name;
+    const discId = events.find(x=>x.id===eid)?.discipline_id;
+    const eName = events.find(x=>x.id===eid)?.name;
+    const res = await sb.rpc('scout_athlete',{ p_manager_id:user.id, p_sport:sName, p_event:eName });
+    if(res.error || !res.data?.ok){ el('st').textContent='Error: '+(res.error?.message || res.data?.message || ''); return; }
+    el('st').textContent='Nieuw: rating '+Number(res.data.rating).toFixed(1)+' (cap '+Number(res.data.potential_max).toFixed(1)+')';
+    loadRecent();
+    setTimeout(()=>el('st').textContent='',2000);
   }
 
-  function scout(){
-    var sportId = parseInt(el('sportSel').value||'0',10);
-    var eventName = el('eventSel').value||'';
-    var cost = parseInt(el('cost').textContent||'20',10);
-    if(!sportId || !eventName){ alert('Kies sport en onderdeel.'); return; }
-    if(mpVal < cost){ alert('Onvoldoende MP.'); return; }
-
-    var sName = sportNameById(sportId);
-    setStatus('st-scout','Scouten…'); showErr('err-scout','');
-    sb.rpc('scout_athlete', { p_manager_id: sessionUser.id, p_sport: sName, p_event: eventName, p_mp_cost: null })
-      .then(function(r){
-        if(r.error){ showErr('err-scout', r.error.message||String(r.error)); setStatus('st-scout',''); return; }
-        if(!r.data || !r.data.ok){ showErr('err-scout', (r.data && r.data.message) || 'Onbekende fout'); setStatus('st-scout',''); return; }
-        setStatus('st-scout','Gescout! MP -'+(r.data.mp_spent||cost));
-        el('r-sport').textContent = sName;
-        el('r-event').textContent = eventName;
-        el('r-rating').textContent = (r.data.rating!=null)? Number(r.data.rating).toFixed(1): '—';
-        el('r-id').textContent = r.data.athlete_id || '—';
-        document.getElementById('result').style.display='';
-        // refresh MP
-        loadMP();
-      });
+  async function loadRecent(){
+    const r=await sb.from('athletes').select('sport,event,rating,potential_max,created_at').eq('manager_id', user.id).order('created_at',{ascending:false}).limit(10);
+    const body=el('body'); body.innerHTML='';
+    const arr=r.data||[]; if(!arr.length){ body.innerHTML='<tr><td colspan="5" class="muted">Nog niets</td></tr>'; return; }
+    arr.forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(a.sport||'')+'</td><td>'+esc(a.event||'')+'</td><td>'+num(a.rating)+'</td><td>'+num(a.potential_max)+'</td><td>'+new Date(a.created_at).toLocaleString()+'</td>';
+      body.appendChild(tr);
+    });
   }
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function num(n){return (n==null?'—':Number(n).toFixed(1))}
 </script>
 </body>
 </html>
