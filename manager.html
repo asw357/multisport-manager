@@ -1,259 +1,113 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Managerprofiel • Multisport-Manager</title>
+  <title>Manager • Multisport-Manager</title>
   <style>
     body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#fff;background:linear-gradient(120deg,#0d1b2a,#1b263b)}
-    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033;position:sticky;top:0}
+    header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;background:#00000033}
     header a, header button{color:#fff;text-decoration:none;border:0;background:#ffffff1a;padding:8px 12px;border-radius:10px;cursor:pointer}
     header a:hover, header button:hover{background:#ffffff2a}
     .wrap{max-width:1100px;margin:20px auto;padding:0 14px}
-    .card{background:#ffffff10;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
+    .card{background:#ffffff12;border:1px solid #ffffff22;border-radius:14px;padding:14px;margin-bottom:14px}
     .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    label{display:block;font-size:.9rem;margin:.25rem 0}
-    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
-    .btn{padding:10px 12px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
-    .ok{background:#2a9d8f;color:#fff}
-    .ghost{background:#ffffff1a;color:#fff}
-    table{width:100%;border-collapse:collapse;margin-top:6px}
-    th,td{padding:10px;border-bottom:1px solid #ffffff1f;text-align:left;font-size:.95rem;vertical-align:top}
-    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f;font-size:.85rem}
-    .status{margin-top:6px;font-size:.9rem;color:#ffffffcc;min-height:1.2em;white-space:pre-line}
-    .errorbox{margin-top:10px;background:#5a1f1f;border:1px solid #ffb3b3;color:#ffdede;padding:10px;border-radius:10px;font-size:.9rem;display:none}
-    .muted{color:#ffffffb5}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff1f}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #ffffff1f;text-align:left}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#fff}
+    .btn{padding:8px 12px;border-radius:10px;border:0;background:#2a9d8f;color:#fff;cursor:pointer}
+    .muted{color:#ffffffc7}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <header>
+<header>
   <div class="row">
     <a href="index.html">Home</a>
-    <a href="admin.html" id="admin-link" style="display:none">Admin</a>
-    <a href="trainen.html">Atleten trainen</a>
+    <a href="manager.html">Manager</a>
+    <a href="inschrijven.html">Inschrijven</a>
+    <a href="trainen.html">Trainen</a>
     <a href="scouten.html">Scouten</a>
+    <a href="resultaten.html">Resultaten</a>
+    <a href="admin.html">Admin</a>
   </div>
-  <div class="row">
-    <button class="ghost" onclick="refreshAll()">⟳ Vernieuwen</button>
-    <button class="ghost" onclick="forceInit()">Forceer init</button>
-    <button class="ghost" onclick="logout()">Uitloggen</button>
-  </div>
+  <div class="row"><button onclick="logout()">Uitloggen</button></div>
 </header>
 
-
-  <div class="wrap">
-    <div id="auth-warning" class="card" style="display:none">
-      <h2>Niet ingelogd</h2>
-      <p class="muted">Ga naar de <a href="index.html" style="color:#fff">homepage</a> om in te loggen of te registreren.</p>
-    </div>
-
-    <div id="content" style="display:none">
-      <section class="card">
-        <h2 style="margin-top:0">Jouw profiel</h2>
-        <div class="row">
-          <div style="flex:1;min-width:240px">
-            <label>Managernaam</label>
-            <input id="display_name" placeholder="Managernaam"/>
-          </div>
-          <button class="btn ok" onclick="saveName()">Opslaan</button>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <div class="pill">E-mail: <span id="email" style="margin-left:6px"></span></div>
-          <div class="pill">Land: <span id="country" style="margin-left:6px"></span></div>
-          <div class="pill">MP: <span id="mp" style="margin-left:6px"></span></div>
-        </div>
-        <div class="status" id="status-prof"></div>
-        <div class="errorbox" id="err-prof"></div>
-      </section>
-
-      <section class="card">
-        <div class="row" style="align-items:center">
-          <h2 style="margin:0">Jouw atleten</h2>
-          <span class="pill" id="ath-count">0</span>
-        </div>
-
-        <div class="row" style="margin-top:6px">
-          <input id="q" placeholder="Zoek op sport, onderdeel of rating…" oninput="applyFilters()" style="flex:2;min-width:200px"/>
-          <select id="sportFilter" onchange="applyFilters()" style="flex:1;min-width:160px">
-            <option value="">Alle sporten</option>
-          </select>
-          <select id="activeFilter" onchange="applyFilters()" style="flex:1;min-width:140px">
-            <option value="">Status: alle</option>
-            <option value="true">Actief</option>
-            <option value="false">Inactief</option>
-          </select>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Status</th><th>Aangemaakt</th>
-            </tr>
-          </thead>
-          <tbody id="ath-body">
-            <tr><td colspan="5" class="muted">Laden…</td></tr>
-          </tbody>
-        </table>
-
-        <div class="status" id="status-ath"></div>
-        <div class="errorbox" id="err-ath"></div>
-      </section>
-    </div>
+<div class="wrap">
+  <div id="auth-warning" class="card" style="display:none">
+    <h2>Niet ingelogd</h2>
+    <p class="muted">Log in op de <a href="index.html" style="color:#fff">homepage</a>.</p>
   </div>
 
-  <script>
-    // ===== Supabase client (ES5-compat) =====
-    if (!window.supabase) { alert("Kon Supabase library niet laden (unpkg geblokkeerd?)."); }
-    var SUPABASE_URL = "https://mbrehhloxonpnihetuij.supabase.co";
-    var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
-    var ADMIN_EMAIL = "wilcoboesveld12@hotmail.com";
-    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <div id="app" style="display:none">
+    <section class="card">
+      <div class="row">
+        <h2 style="margin:0">Jouw profiel</h2>
+        <span class="pill">MP: <b id="mp">0</b></span>
+        <span class="pill">Land: <b id="country">—</b></span>
+        <span class="pill">E-mail: <b id="email">—</b></span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <a class="btn" href="trainen.html">Atleten trainen</a>
+        <a class="btn" href="scouten.html">Scouten</a>
+        <a class="btn" href="inschrijven.html">Inschrijven</a>
+        <a class="btn" href="resultaten.html">Resultaten</a>
+      </div>
+    </section>
 
-    // ===== helpers =====
-    function el(id){ return document.getElementById(id); }
-    function setStatus(id, t){ el(id).textContent = t || ''; }
-    function showErr(id, msg){ var b = el(id); b.style.display = msg ? 'block' : 'none'; b.textContent = msg || ''; }
-    function showAuth(){ el('auth-warning').style.display=''; el('content').style.display='none'; }
-    function showContent(){ el('auth-warning').style.display='none'; el('content').style.display=''; }
+    <section class="card">
+      <div class="row">
+        <h2 style="margin:0">Team</h2>
+        <input id="q" placeholder="Zoek (sport / onderdeel)" oninput="renderAthletes()" style="flex:1;min-width:240px"/>
+      </div>
+      <table style="margin-top:8px">
+        <thead><tr><th>Sport</th><th>Onderdeel</th><th>Rating</th><th>Cap</th><th>Aangemaakt</th></tr></thead>
+        <tbody id="body"><tr><td colspan="5" class="muted">Laden…</td></tr></tbody>
+      </table>
+    </section>
+  </div>
+</div>
 
-    var sessionUser = null;
-    var athletesRaw = [];
+<script>
+  const SUPABASE_URL="https://mbrehhloxonpnihetuij.supabase.co";
+  const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icmVoaGxveG9ucG5paGV0dWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5Mjc0MjcsImV4cCI6MjA3MDUwMzQyN30.ehUlP9QSzYT9x3OUIDqrRcPxfZv8yTXSBwSNeOvzJ7s";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let user=null, myMgr=null, myCountry=null, myAth=[];
 
-    // ===== boot =====
-    sb.auth.onAuthStateChange(function(_ev, session){ if (session){ init(); } else { showAuth(); } });
-    init();
+  function el(id){return document.getElementById(id)}
+  function logout(){ sb.auth.signOut().then(()=>location.href='index.html') }
 
-    function init(){
-      sb.auth.getSession().then(function(res){
-        sessionUser = res && res.data && res.data.session ? res.data.session.user : null;
-        if (!sessionUser){ showAuth(); return; }
-        // admin link tonen
-        var isAdmin = sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL;
-        el('admin-link').style.display = isAdmin ? 'inline-block' : 'none';
-        showContent();
-        loadProfile();
-        loadAthletes();
-      });
-    }
+  sb.auth.getSession().then(async r=>{
+    user=r.data?.session?.user; if(!user){ document.getElementById('auth-warning').style.display=''; return; }
+    document.getElementById('app').style.display='';
+    el('email').textContent=user.email||user.id;
+    const m=await sb.from('managers').select('mp,country_id').eq('user_id',user.id).single();
+    if(!m.error && m.data){ myMgr=m.data; el('mp').textContent = m.data.mp ?? 0; }
+    if(myMgr?.country_id){
+      const c=await sb.from('countries').select('name').eq('id',myMgr.country_id).single();
+      if(!c.error) el('country').textContent=c.data?.name||'—';
+    } else { el('country').textContent='—'; }
+    loadAthletes();
+  });
 
-    function refreshAll(){ loadProfile(); loadAthletes(); }
-
-    // ===== profiel =====
-    function loadProfile(){
-      setStatus('status-prof','Laden…'); showErr('err-prof','');
-      sb.from('my_profile').select('*').eq('user_id', sessionUser.id).single()
-        .then(function(res){
-          if (res.error){
-            setStatus('status-prof','Kon profiel niet laden.');
-            showErr('err-prof', res.error.message || String(res.error));
-            return;
-          }
-          var p = res.data || {};
-          el('display_name').value = p.display_name || '';
-          el('email').textContent = p.email || '';
-          el('country').textContent = p.country_name || 'Onbekend';
-          el('mp').textContent = typeof p.mp === 'number' ? p.mp : 0;
-          setStatus('status-prof','');
-        });
-    }
-
-    function saveName(){
-      var name = (el('display_name').value || '').trim();
-      if (!name){ alert('Managernaam mag niet leeg zijn.'); return; }
-      setStatus('status-prof','Opslaan…'); showErr('err-prof','');
-      sb.from('managers').update({ display_name: name }).eq('user_id', sessionUser.id)
-        .then(function(r){
-          if (r.error){ showErr('err-prof', r.error.message || String(r.error)); setStatus('status-prof',''); return; }
-          setStatus('status-prof','Opgeslagen!'); setTimeout(function(){ setStatus('status-prof',''); }, 1200);
-          loadProfile();
-        });
-    }
-
-    function forceInit(){
-      // handig voor testen: init_manager forceren
-      setStatus('status-prof','Init uitvoeren…'); showErr('err-prof','');
-      sb.rpc('init_manager', { p_user_id: sessionUser.id, p_display_name: el('display_name').value || (sessionUser.email ? sessionUser.email.split('@')[0] : 'Manager') })
-        .then(function(r){
-          if (r.error){ showErr('err-prof', r.error.message || String(r.error)); setStatus('status-prof',''); return; }
-          setStatus('status-prof','Init klaar.'); setTimeout(function(){ setStatus('status-prof',''); }, 1200);
-          refreshAll();
-        });
-    }
-
-    // ===== atleten =====
-    function loadAthletes(){
-      setStatus('status-ath','Laden…'); showErr('err-ath','');
-      sb.from('athletes').select('id,sport,event,rating,active,created_at')
-        .order('sport',{ascending:true}).order('event',{ascending:true})
-        .then(function(res){
-          if (res.error){ showErr('err-ath', res.error.message || String(res.error)); setStatus('status-ath',''); return; }
-          athletesRaw = res.data || [];
-          fillSportFilter(athletesRaw);
-          renderAthletes(athletesRaw);
-          setStatus('status-ath','');
-        });
-    }
-
-    function fillSportFilter(rows){
-      var sel = el('sportFilter');
-      // reset (behoud eerste)
-      while (sel.options.length > 1) sel.remove(1);
-      var seen = {}, i;
-      for (i=0;i<rows.length;i++){
-        var s = rows[i].sport || '';
-        if (!s || seen[s]) continue;
-        seen[s]=1;
-        var o = document.createElement('option'); o.value = s; o.textContent = s;
-        sel.appendChild(o);
-      }
-    }
-
-    function applyFilters(){
-      var q = (el('q').value || '').toLowerCase();
-      var s = el('sportFilter').value;
-      var a = el('activeFilter').value;
-      var rows = athletesRaw.slice();
-
-      if (s) rows = rows.filter(function(r){ return (r.sport||'') === s; });
-      if (a) rows = rows.filter(function(r){ return String(r.active) === a; });
-      if (q) rows = rows.filter(function(r){
-        return ((r.sport||'').toLowerCase().indexOf(q) > -1) ||
-               ((r.event||'').toLowerCase().indexOf(q) > -1) ||
-               (String(r.rating||'').toLowerCase().indexOf(q) > -1);
-      });
-
-      renderAthletes(rows);
-    }
-
-    function renderAthletes(rows){
-      var body = el('ath-body'); body.innerHTML='';
-      if (!rows.length){
-        var tr = document.createElement('tr');
-        var td = document.createElement('td'); td.colSpan = 5; td.className='muted'; td.textContent='Geen atleten gevonden.';
-        tr.appendChild(td); body.appendChild(tr);
-      } else {
-        for (var i=0;i<rows.length;i++){
-          var r = rows[i];
-          var tr = document.createElement('tr');
-          tr.innerHTML =
-            '<td>'+esc(r.sport)+'</td>' +
-            '<td>'+esc(r.event)+'</td>' +
-            '<td>'+Number(r.rating||0).toFixed(1)+'</td>' +
-            '<td>'+(r.active ? 'Actief' : 'Inactief')+'</td>' +
-            '<td>'+new Date(r.created_at).toLocaleString()+'</td>';
-          body.appendChild(tr);
-        }
-      }
-      el('ath-count').textContent = String(rows.length);
-    }
-
-    function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-
-    // ===== logout =====
-    function logout(){
-      sb.auth.signOut().then(function(){ window.location.href='index.html'; });
-    }
-  </script>
+  async function loadAthletes(){
+    const r=await sb.from('athletes').select('id,sport,event,rating,potential_max,created_at').eq('manager_id', user.id).order('created_at',{ascending:false});
+    if(!r.error){ myAth=r.data||[]; renderAthletes(); }
+  }
+  function renderAthletes(){
+    const q=(el('q').value||'').toLowerCase(); const body=el('body'); body.innerHTML='';
+    const list=myAth.filter(a=> !q || (a.sport||'').toLowerCase().includes(q) || (a.event||'').toLowerCase().includes(q));
+    if(!list.length){ body.innerHTML='<tr><td colspan="5" class="muted">Geen atleten</td></tr>'; return; }
+    list.forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(a.sport||'')+'</td><td>'+esc(a.event||'')+'</td><td>'+num(a.rating)+'</td><td>'+num(a.potential_max)+'</td><td>'+new Date(a.created_at).toLocaleString()+'</td>';
+      body.appendChild(tr);
+    });
+  }
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function num(n){return (n==null?'—':Number(n).toFixed(1))}
+</script>
 </body>
 </html>
