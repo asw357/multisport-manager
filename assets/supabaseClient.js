@@ -8,3 +8,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,
   },
 });
+
+// Handig voor Console-debug: window.supabase
+// (voor productie is dit niet per se nodig, maar helpt nu even)
+if (typeof window !== "undefined") {
+  window.supabase = supabase;
+}
