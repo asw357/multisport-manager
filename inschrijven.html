@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Inschrijven • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="card">
+      <h3>Inschrijven</h3>
+      <div id="msg"></div>
+      <form id="signupForm">
+        <label>Managernaam</label>
+        <input type="text" id="manager" required minlength="3" maxlength="32" />
+        <div class="row">
+          <div style="flex:1">
+            <label>E-mail</label>
+            <input type="email" id="email" required />
+          </div>
+          <div style="flex:1">
+            <label>Wachtwoord</label>
+            <input type="password" id="password" required minlength="6" />
+          </div>
+        </div>
+        <button type="submit">Account aanmaken</button>
+      </form>
+      <p class="small">Na inschrijven krijg je automatisch een land, start-MP en 12 starter-atleten.</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+
+    const form = document.getElementById("signupForm");
+    const msg = document.getElementById("msg");
+
+    function show(type, text) {
+      msg.innerHTML = `<div class="msg ${type}">${text}</div>`;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.innerHTML = "";
+      const manager = document.getElementById("manager").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        // SignUp (zorg dat Email confirmations UIT staan voor direct gebruik)
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+
+        // Direct inloggen (fallback als confirmations uit zijn)
+        await supabase.auth.signInWithPassword({ email, password });
+
+        // Server-side registratie (land + MP + starters)
+        const { data: reg, error: regErr } = await supabase.rpc("msm_register_user", { p_manager_name: manager });
+        if (regErr) throw regErr;
+
+        const country = reg?.country ?? "—";
+        const mp = reg?.starter_mp ?? 0;
+        show("ok", `Welkom! Land: <b>${country}</b>. Start MP: <b>${mp}</b>. Je account is klaar.`);
+        setTimeout(() => (window.location.href = "manager.html"), 1200);
+      } catch (err) {
+        console.error(err);
+        show("error", err.message ?? "Er ging iets mis bij inschrijven.");
+      }
+    });
+  </script>
+</body>
+</html>
