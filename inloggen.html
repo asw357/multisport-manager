@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Inloggen • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="card">
+      <h3>Inloggen</h3>
+      <div id="msg"></div>
+      <form id="loginForm">
+        <label>E-mail</label>
+        <input type="email" id="email" required />
+        <label>Wachtwoord</label>
+        <input type="password" id="password" required />
+        <button type="submit">Inloggen</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+
+    const form = document.getElementById("loginForm");
+    const msg = document.getElementById("msg");
+    const show = (t, s) => (msg.innerHTML = `<div class="msg ${t}">${s}</div>`);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        show("ok","Succesvol ingelogd. Even geduld…");
+        setTimeout(()=> window.location.href="manager.html", 800);
+      } catch (err) {
+        show("error", err.message ?? "Inloggen mislukt.");
+      }
+    });
+  </script>
+</body>
+</html>
