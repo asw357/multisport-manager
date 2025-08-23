@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Manager • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div id="top" class="grid"></div>
+    <div class="card">
+      <h3>Jouw Atleten</h3>
+      <div id="athletes"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender, requireAuth, getMyProfile } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+
+    await requireAuth();
+
+    async function load() {
+      const prof = await getMyProfile();
+      const top = document.getElementById("top");
+      top.innerHTML = `
+        <div class="card">
+          <h3>${prof?.manager_name ?? 'Manager'}</h3>
+          <div class="row">
+            <div class="kpi">${prof?.mp ?? 0} MP</div>
+            <div class="badge">${prof?.country_name ?? '—'}</div>
+            ${prof?.is_admin ? '<div class="badge">Admin</div>' : ''}
+          </div>
+          <p class="small">${prof?.email ?? ''}</p>
+        </div>
+        <div class="card">
+          <h3>Snel starten</h3>
+          <p><a href="training.html">Naar Training</a> • <a href="scouten.html">Scout nieuwe atleet</a></p>
+        </div>
+      `;
+
+      const { data, error } = await supabase
+        .from("athletes")
+        .select("id,name,sport,event,age,speed,power,technique,stamina,created_at")
+        .order("created_at", { ascending:false });
+      if (error) {
+        document.getElementById("athletes").innerHTML = `<div class="msg error">${error.message}</div>`;
+        return;
+      }
+      renderAthletes(data);
+    }
+
+    function renderAthletes(rows) {
+      const root = document.getElementById("athletes");
+      if (!rows?.length) { root.innerHTML = '<div class="msg warn">Nog geen atleten (scout via Scouten).</div>'; return; }
+      const rowsHtml = rows.map(a => `
+        <tr>
+          <td><b>${a.name}</b><div class="small">${a.sport} – ${a.event}</div></td>
+          <td>${a.age}</td>
+          <td>${a.speed}</td>
+          <td>${a.power}</td>
+          <td>${a.technique}</td>
+          <td>${a.stamina}</td>
+        </tr>
+      `).join("");
+      root.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Naam</th><th>Leeftijd</th><th>Snelh.</th><th>Kracht</th><th>Techniek</th><th>Uith.</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      `;
+    }
+
+    load();
+  </script>
+</body>
+</html>
