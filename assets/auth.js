@@ -5,14 +5,17 @@ export async function getUser() {
   return user ?? null;
 }
 
-// <<< NIEUW: call bootstrap-RPC >>>
 export async function ensureAdminBootstrap() {
   try {
-    await supabase.rpc("ensure_admin_for_owner");
+    const { error } = await supabase.rpc("ensure_admin_for_owner");
+    if (error) {
+      console.warn("ensure_admin_for_owner RPC error:", error);
+    }
   } catch (e) {
-    console.warn("ensure_admin_for_owner RPC error:", e?.message);
+    console.warn("ensure_admin_for_owner runtime error:", e?.message || e);
   }
 }
+
 
 export async function requireAuth(redirect = "inloggen.html") {
   const user = await getUser();
