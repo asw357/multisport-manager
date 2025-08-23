@@ -5,6 +5,15 @@ export async function getUser() {
   return user ?? null;
 }
 
+// <<< NIEUW: call bootstrap-RPC >>>
+export async function ensureAdminBootstrap() {
+  try {
+    await supabase.rpc("ensure_admin_for_owner");
+  } catch (e) {
+    console.warn("ensure_admin_for_owner RPC error:", e?.message);
+  }
+}
+
 export async function requireAuth(redirect = "inloggen.html") {
   const user = await getUser();
   if (!user) window.location.href = redirect;
@@ -23,6 +32,8 @@ export async function getMyProfile() {
 }
 
 export async function requireAdmin(redirect = "index.html") {
+  // <<< Eerst bootstrappen, dan profiel ophalen
+  await ensureAdminBootstrap();
   const user = await requireAuth();
   const prof = await getMyProfile();
   if (!prof?.is_admin) window.location.href = redirect;
@@ -60,6 +71,10 @@ export async function refreshNav() {
     if (signupLink) signupLink.style.display = "inline-block";
     return;
   }
+
+  // <<< Bootstrap admin zodra iemand is ingelogd
+  await ensureAdminBootstrap();
+
   if (loginLink) loginLink.style.display = "none";
   if (signupLink) signupLink.style.display = "none";
 
