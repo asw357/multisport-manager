@@ -31,46 +31,63 @@
     </div>
   </div>
 
-  <script type="module">
-    import { supabase } from "./assets/supabaseClient.js";
-    import { navRender } from "./assets/auth.js";
-    navRender(document.getElementById("nav"));
+ <script type="module">
+  import { supabase } from "./assets/supabaseClient.js";
+  import { navRender } from "./assets/auth.js";
+  navRender(document.getElementById("nav"));
 
-    const form = document.getElementById("signupForm");
-    const msg = document.getElementById("msg");
+  const form = document.getElementById("signupForm");
+  const msg = document.getElementById("msg");
 
-    function show(type, text) {
-      msg.innerHTML = `<div class="msg ${type}">${text}</div>`;
-    }
+  const show = (type, text) => {
+    msg.innerHTML = `<div class="msg ${type}">${text}</div>`;
+  };
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      msg.innerHTML = "";
-      const manager = document.getElementById("manager").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.innerHTML = "";
 
-      try {
-        // SignUp (zorg dat Email confirmations UIT staan voor direct gebruik)
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
+    const manager = document.getElementById("manager").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-        // Direct inloggen (fallback als confirmations uit zijn)
-        await supabase.auth.signInWithPassword({ email, password });
+    try {
+      // 1) signUp
+      const { data: sign, error: signErr } = await supabase.auth.signUp({ email, password });
+      if (signErr) throw signErr;
 
-        // Server-side registratie (land + MP + starters)
-        const { data: reg, error: regErr } = await supabase.rpc("msm_register_user", { p_manager_name: manager });
-        if (regErr) throw regErr;
+      // 2) Als email confirmation UIT staat, is er meteen een sessie.
+      //    Anders is er géén sessie en moet gebruiker eerst e-mail bevestigen.
+      let hasSession = false;
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      hasSession = !!sessionCheck?.session;
 
-        const country = reg?.country ?? "—";
-        const mp = reg?.starter_mp ?? 0;
-        show("ok", `Welkom! Land: <b>${country}</b>. Start MP: <b>${mp}</b>. Je account is klaar.`);
-        setTimeout(() => (window.location.href = "manager.html"), 1200);
-      } catch (err) {
-        console.error(err);
-        show("error", err.message ?? "Er ging iets mis bij inschrijven.");
+      if (!hasSession) {
+        // Probeer direct in te loggen (werkt alleen als confirmations UIT staan)
+        const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (!loginErr) {
+          hasSession = true;
+        }
       }
-    });
-  </script>
+
+      if (!hasSession) {
+        show("ok", "Account aangemaakt. Check je e-mail om te bevestigen en log daarna in.");
+        return;
+      }
+
+      // 3) server-side init (land + MP + starters)
+      const { data: reg, error: regErr } = await supabase.rpc("msm_register_user", { p_manager_name: manager });
+      if (regErr) throw regErr;
+
+      const country = reg?.country ?? "—";
+      const mp = reg?.starter_mp ?? 0;
+      show("ok", `Welkom! Land: <b>${country}</b> • Start MP: <b>${mp}</b>. Je account is klaar.`);
+      setTimeout(() => (window.location.href = "manager.html"), 1200);
+    } catch (err) {
+      console.error(err);
+      show("error", err.message ?? "Er ging iets mis bij inschrijven.");
+    }
+  });
+</script>
 </body>
 </html>
