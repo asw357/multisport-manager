@@ -1,0 +1,4 @@
+<script type="module">
+export const SUPABASE_URL = "https://trhxkukhvsxxeowyuska.supabase.co";
+export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyaHhrdWtodnN4eGVvd3l1c2thIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MzIwMjksImV4cCI6MjA3MTUwODAyOX0.Q-40SPtA5ZAjmFoZXvnPX1OkZZ24Gfi8-XoEvEDTQvc";
+</script>
