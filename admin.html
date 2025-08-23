@@ -12,7 +12,9 @@
   <div class="container">
     <div class="card">
       <h3>Admin Console</h3>
-      <p class="small">Alleen zichtbaar en toegankelijk voor admins.<br/>Standaard is <b>wilcoboesveld12@hotmail.com</b> de beoogde admin; geef jezelf admin via de knop hieronder zodra je profiel bestaat.</p>
+      <p class="small">
+        Alleen zichtbaar voor admins. Het e-mailadres <b>wilcoboesveld12@hotmail.com</b> wordt automatisch admin gemaakt.
+      </p>
       <div id="who"></div>
     </div>
 
@@ -33,14 +35,17 @@
   <script type="module">
     import { supabase } from "./assets/supabaseClient.js";
     import { navRender, requireAdmin, getMyProfile } from "./assets/auth.js";
+
     navRender(document.getElementById("nav"));
 
+    // Guard
     const { user, prof } = await requireAdmin();
 
     document.getElementById("who").innerHTML = `
       Ingelogd als <b>${prof?.email}</b> • <span class="badge">${prof?.manager_name ?? '—'}</span> • ${prof?.is_admin ? '<span class="badge">Admin ✅</span>' : '<span class="badge">Geen Admin</span>'}
     `;
 
+    // Tabs
     const tabs = document.querySelectorAll(".tabs a");
     const bodies = {
       users: document.getElementById("tab-users"),
@@ -55,7 +60,7 @@
       bodies[to].style.display = "block";
     }));
 
-    // ========== USERS ==========
+    // ===== USERS =====
     async function loadUsers() {
       const root = bodies.users;
       const { data, error } = await supabase.rpc("admin_get_users");
@@ -88,7 +93,7 @@
       });
     }
 
-    // ========== COUNTRIES ==========
+    // ===== COUNTRIES =====
     async function loadCountries() {
       const root = bodies.countries;
       const { data, error } = await supabase.from("countries").select("id,name,code,sort_order,is_assigned").order("sort_order");
@@ -100,7 +105,7 @@
           <input id="c_sort" type="number" placeholder="Sort" />
           <button id="c_add">Toevoegen/Updaten</button>
         </div>
-        <p class="small">Let op: toewijzing gebeurt automatisch bij inschrijven. Hier beheer je de lijst en sortering.</p>
+        <p class="small">Toewijzing gebeurt automatisch bij inschrijven. Hier beheer je de lijst en sortering.</p>
         <table class="table">
           <thead><tr><th>Sort</th><th>Land</th><th>Code</th><th>Assigned</th></tr></thead>
           <tbody>
@@ -123,20 +128,7 @@
       });
     }
 
-    -- // (Note: The triple dash below is just a visual separator in HTML; it won’t break.)
-  </script>
-
-  <script type="module">
-    import { supabase } from "./assets/supabaseClient.js";
-    import { requireAdmin } from "./assets/auth.js";
-    await requireAdmin(); // guard if reloaded
-
-    const bodies = {
-      templates: document.getElementById("tab-templates"),
-      settings: document.getElementById("tab-settings"),
-    };
-
-    // ========== TEMPLATES ==========
+    // ===== TEMPLATES =====
     async function loadTemplates() {
       const root = bodies.templates;
       const { data, error } = await supabase.from("starter_templates").select("*").order("sport").order("event");
@@ -176,12 +168,11 @@
       });
     }
 
-    // ========== SETTINGS ==========
+    // ===== SETTINGS =====
     async function loadSettings() {
       const root = bodies.settings;
       const { data, error } = await supabase.from("settings").select("*").order("key");
       if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
-
       const getVal = (k) => data.find(x=>x.key===k)?.value?.v ?? '';
       root.innerHTML = `
         <div class="grid">
@@ -218,15 +209,11 @@
       });
     }
 
-    // initial loads
+    // Initial loads
     await loadUsers();
     await loadCountries();
     await loadTemplates();
     await loadSettings();
-
-    // expose for first module
-    async function loadUsers(){ /* shadowed above; noop here */ }
-    async function loadCountries(){ /* shadowed above; noop here */ }
   </script>
 </body>
 </html>
