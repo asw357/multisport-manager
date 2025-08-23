@@ -1,4 +1,3 @@
-<script type="module">
 import { supabase } from "./supabaseClient.js";
 
 export async function getUser() {
@@ -67,4 +66,3 @@ export async function refreshNav() {
   const prof = await getMyProfile();
   if (adminLink) adminLink.style.display = prof?.is_admin ? "inline-block" : "none";
 }
-</script>
