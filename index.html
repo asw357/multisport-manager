@@ -29,7 +29,8 @@
           <li><a href="manager.html">Manager dashboard</a></li>
           <li><a href="training.html">Training</a></li>
           <li><a href="scouten.html">Scout een atleet</a></li>
-          <!-- Admin-link hieronder wordt dynamisch toegevoegd voor admins -->
+          <!-- Admin-link hieronder wordt dynamisch zichtbaar gemaakt -->
+          <li id="adminListItem" style="display:none;"><a href="admin.html">Admin Console</a></li>
         </ul>
         <p class="small">Na inschrijven ontvang je automatisch een land, start‑MP en starter‑atleten.</p>
       </div>
@@ -40,7 +41,7 @@
         <div id="profileContent">Laden…</div>
       </div>
 
-      <!-- Admin kaart: wordt alleen getoond aan admins -->
+      <!-- Admin kaart: alleen zichtbaar voor admins of owner email -->
       <div class="card" id="adminCard" style="display:none">
         <h3>Admin</h3>
         <p>Beheer landen, starter‑templates en spelinstellingen.</p>
@@ -51,30 +52,27 @@
   </div>
 
   <script type="module">
-    import { navRender, getMyProfile, getUser } from "./assets/auth.js";
+    import { navRender, getMyProfile, getUser, isOwnerAdminEmail } from "./assets/auth.js";
 
-    // Render de topnavigatie
     navRender(document.getElementById("nav"));
 
-    // Elementen
     const adminCard = document.getElementById("adminCard");
+    const adminListItem = document.getElementById("adminListItem");
     const profileCard = document.getElementById("profileCard");
     const profileContent = document.getElementById("profileContent");
     const ctaSignup = document.getElementById("ctaSignup");
     const ctaLogin = document.getElementById("ctaLogin");
 
-    // Startup: toon adminkaart alleen voor admins; toon profielkaart voor ingelogde users
     (async () => {
       const user = await getUser();
 
       if (user) {
-        // Ingelogd: verberg de inschrijf-/login-CTA’s
         if (ctaSignup) ctaSignup.style.display = "none";
         if (ctaLogin) ctaLogin.style.display = "none";
 
-        const prof = await getMyProfile();
+        const [prof, owner] = [await getMyProfile(), await isOwnerAdminEmail()];
+
         if (prof) {
-          // Profielkaart vullen
           profileCard.style.display = "block";
           profileContent.innerHTML = `
             <div class="row">
@@ -88,18 +86,18 @@
                 <div class="badge">${prof.country_name ?? "—"}</div>
               </div>
             </div>
-            ${prof.is_admin ? '<p class="small" style="margin-top:10px">Je hebt admin‑rechten.</p>' : ""}
+            ${(owner || prof.is_admin) ? '<p class="small" style="margin-top:10px">Je hebt admin‑rechten.</p>' : ""}
           `;
+        }
 
-          // Adminkaart alleen als prof.is_admin == true
-          if (prof.is_admin) {
-            adminCard.style.display = "block";
-          }
+        if (owner || prof?.is_admin) {
+          adminCard.style.display = "block";
+          adminListItem.style.display = "list-item";
         }
       } else {
-        // Niet ingelogd: verberg profiel- en adminkaart
         profileCard.style.display = "none";
         adminCard.style.display = "none";
+        adminListItem.style.display = "none";
       }
     })();
   </script>
