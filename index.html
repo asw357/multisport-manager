@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Multisport-Manager • Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <h3>Welkom bij Multisport-Manager</h3>
+        <p>Beheer je land, train atleten, scout talent en strijd om medailles – volledig online.</p>
+        <p><a class="badge" href="inschrijven.html">Nieuw? Schrijf je in</a> of <a class="badge" href="inloggen.html">log in</a> om te starten.</p>
+      </div>
+      <div class="card">
+        <h3>Direct aan de slag</h3>
+        <ul>
+          <li><a href="manager.html">Manager dashboard</a></li>
+          <li><a href="training.html">Training</a></li>
+          <li><a href="scouten.html">Scout een atleet</a></li>
+          <li><a href="admin.html">Admin (alleen admins)</a></li>
+        </ul>
+        <p class="small">Admins kunnen landen, templates en spelinstellingen beheren.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { navRender } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+  </script>
+</body>
+</html>
