@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Uitloggen • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="card">
+      <h3>Uitloggen</h3>
+      <div id="status">Bezig met uitloggen…</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+    const status = document.getElementById("status");
+    (async () => {
+      await supabase.auth.signOut();
+      status.innerHTML = '<div class="msg ok">Je bent uitgelogd.</div>';
+      setTimeout(()=> window.location.href="index.html", 800);
+    })();
+  </script>
+</body>
+</html>
