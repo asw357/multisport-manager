@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Scout • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div id="prof" class="card"></div>
+    <div class="card">
+      <h3>Scout nieuwe atleet</h3>
+      <div id="msg"></div>
+      <div class="row">
+        <select id="sport"></select>
+        <select id="event"></select>
+        <button id="scoutBtn">Scout (kost MP)</button>
+      </div>
+      <p class="small">Kosten worden bepaald door de instelling <b>scout_cost</b> (standaard 10 MP).</p>
+    </div>
+    <div class="card">
+      <h3>Starter-templates (ter info)</h3>
+      <div id="templates"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender, requireAuth, getMyProfile } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+    await requireAuth();
+
+    const profBox = document.getElementById("prof");
+    const msg = document.getElementById("msg");
+    const sportSel = document.getElementById("sport");
+    const eventSel = document.getElementById("event");
+    const scoutBtn = document.getElementById("scoutBtn");
+    const templatesDiv = document.getElementById("templates");
+
+    const show = (t,s)=> (msg.innerHTML = `<div class="msg ${t}">${s}</div>`);
+
+    async function refreshProfile() {
+      const prof = await getMyProfile();
+      profBox.innerHTML = `
+        <h3>${prof?.manager_name ?? 'Manager'}</h3>
+        <div class="row">
+          <div class="kpi">${prof?.mp ?? 0} MP</div>
+          <div class="badge">${prof?.country_name ?? '—'}</div>
+        </div>`;
+    }
+
+    async function loadTemplates() {
+      const { data, error } = await supabase.from("starter_templates").select("*").order("sport").order("event");
+      if (error) { templatesDiv.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
+      const sports = [...new Set(data.map(t=>t.sport))];
+      sportSel.innerHTML = sports.map(s=> `<option>${s}</option>`).join("");
+      const renderEvents = () => {
+        const cur = sportSel.value;
+        const evs = data.filter(t=>t.sport===cur).map(t=>t.event);
+        eventSel.innerHTML = evs.map(e=> `<option>${e}</option>`).join("");
+      };
+      sportSel.addEventListener("change", renderEvents);
+      renderEvents();
+
+      templatesDiv.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Sport</th><th>Onderdeel</th><th>Speed</th><th>Power</th><th>Tech</th><th>Stamina</th></tr></thead>
+          <tbody>
+            ${data.map(t=>`
+              <tr>
+                <td>${t.sport}</td><td>${t.event}</td>
+                <td>${t.base_speed}</td><td>${t.base_power}</td><td>${t.base_technique}</td><td>${t.base_stamina}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    scoutBtn.addEventListener("click", async () => {
+      msg.innerHTML = "";
+      try {
+        const sport = sportSel.value; const event = eventSel.value;
+        const { data, error } = await supabase.rpc("scout_athlete", { p_sport: sport, p_event: event });
+        if (error) throw error;
+        show("ok", `Nieuwe atleet: <b>${data.name}</b> (${data.sport} – ${data.event})`);
+        await refreshProfile();
+      } catch (e) {
+        show("error", e.message ?? "Scouten mislukt.");
+      }
+    });
+
+    await refreshProfile();
+    await loadTemplates();
+  </script>
+</body>
+</html>
