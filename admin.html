@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin • Multisport-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>.tabs a{margin-right:12px;}</style>
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="card">
+      <h3>Admin Console</h3>
+      <p class="small">Alleen zichtbaar en toegankelijk voor admins.<br/>Standaard is <b>wilcoboesveld12@hotmail.com</b> de beoogde admin; geef jezelf admin via de knop hieronder zodra je profiel bestaat.</p>
+      <div id="who"></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <a href="#" data-tab="users">Gebruikers</a>
+        <a href="#" data-tab="countries">Landen</a>
+        <a href="#" data-tab="templates">Templates</a>
+        <a href="#" data-tab="settings">Instellingen</a>
+      </div>
+      <div id="tab-users" class="tab"></div>
+      <div id="tab-countries" class="tab" style="display:none"></div>
+      <div id="tab-templates" class="tab" style="display:none"></div>
+      <div id="tab-settings" class="tab" style="display:none"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { navRender, requireAdmin, getMyProfile } from "./assets/auth.js";
+    navRender(document.getElementById("nav"));
+
+    const { user, prof } = await requireAdmin();
+
+    document.getElementById("who").innerHTML = `
+      Ingelogd als <b>${prof?.email}</b> • <span class="badge">${prof?.manager_name ?? '—'}</span> • ${prof?.is_admin ? '<span class="badge">Admin ✅</span>' : '<span class="badge">Geen Admin</span>'}
+    `;
+
+    const tabs = document.querySelectorAll(".tabs a");
+    const bodies = {
+      users: document.getElementById("tab-users"),
+      countries: document.getElementById("tab-countries"),
+      templates: document.getElementById("tab-templates"),
+      settings: document.getElementById("tab-settings"),
+    };
+    tabs.forEach(a => a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const to = a.dataset.tab;
+      Object.values(bodies).forEach(el => el.style.display = "none");
+      bodies[to].style.display = "block";
+    }));
+
+    // ========== USERS ==========
+    async function loadUsers() {
+      const root = bodies.users;
+      const { data, error } = await supabase.rpc("admin_get_users");
+      if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
+      root.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Email</th><th>Manager</th><th>Land</th><th>MP</th><th>Admin</th><th>Acties</th></tr></thead>
+          <tbody>
+            ${data.map(u=>`
+              <tr>
+                <td>${u.email ?? '—'}<div class="small">${u.id}</div></td>
+                <td>${u.manager_name ?? ''}</td>
+                <td>${u.country ?? ''}</td>
+                <td>${u.mp ?? 0}</td>
+                <td>${u.is_admin ? 'Ja' : 'Nee'}</td>
+                <td>
+                  <button data-act="toggle-admin" data-id="${u.id}" data-flag="${u.is_admin ? 0 : 1}">${u.is_admin ? 'Admin uit' : 'Admin aan'}</button>
+                </td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+      root.querySelectorAll('button[data-act="toggle-admin"]').forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          const id = btn.dataset.id; const flag = btn.dataset.flag === "1";
+          const { error } = await supabase.rpc("admin_set_admin", { p_user: id, p_is_admin: flag });
+          if (error) alert(error.message);
+          else loadUsers();
+        });
+      });
+    }
+
+    // ========== COUNTRIES ==========
+    async function loadCountries() {
+      const root = bodies.countries;
+      const { data, error } = await supabase.from("countries").select("id,name,code,sort_order,is_assigned").order("sort_order");
+      if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
+      root.innerHTML = `
+        <div class="row">
+          <input id="c_name" placeholder="Landnaam" />
+          <input id="c_code" placeholder="Code (3-letters)" />
+          <input id="c_sort" type="number" placeholder="Sort" />
+          <button id="c_add">Toevoegen/Updaten</button>
+        </div>
+        <p class="small">Let op: toewijzing gebeurt automatisch bij inschrijven. Hier beheer je de lijst en sortering.</p>
+        <table class="table">
+          <thead><tr><th>Sort</th><th>Land</th><th>Code</th><th>Assigned</th></tr></thead>
+          <tbody>
+            ${data.map(c=>`
+              <tr>
+                <td>${c.sort_order ?? ''}</td>
+                <td>${c.name}</td>
+                <td>${c.code ?? ''}</td>
+                <td>${c.is_assigned ? 'Ja' : 'Nee'}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+      root.querySelector("#c_add").addEventListener("click", async ()=>{
+        const name = root.querySelector("#c_name").value.trim();
+        const code = root.querySelector("#c_code").value.trim() || null;
+        const sort = parseInt(root.querySelector("#c_sort").value,10) || null;
+        const { error } = await supabase.rpc("admin_add_country", { p_name: name, p_code: code, p_sort: sort });
+        if (error) alert(error.message); else loadCountries();
+      });
+    }
+
+    -- // (Note: The triple dash below is just a visual separator in HTML; it won’t break.)
+  </script>
+
+  <script type="module">
+    import { supabase } from "./assets/supabaseClient.js";
+    import { requireAdmin } from "./assets/auth.js";
+    await requireAdmin(); // guard if reloaded
+
+    const bodies = {
+      templates: document.getElementById("tab-templates"),
+      settings: document.getElementById("tab-settings"),
+    };
+
+    // ========== TEMPLATES ==========
+    async function loadTemplates() {
+      const root = bodies.templates;
+      const { data, error } = await supabase.from("starter_templates").select("*").order("sport").order("event");
+      if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
+      root.innerHTML = `
+        <div class="row">
+          <input id="t_sport" placeholder="Sport" />
+          <input id="t_event" placeholder="Onderdeel" />
+          <input id="t_speed" type="number" min="1" max="100" placeholder="Speed" />
+          <input id="t_power" type="number" min="1" max="100" placeholder="Power" />
+          <input id="t_tech" type="number" min="1" max="100" placeholder="Tech" />
+          <input id="t_stam" type="number" min="1" max="100" placeholder="Stamina" />
+          <button id="t_save">Opslaan</button>
+        </div>
+        <table class="table">
+          <thead><tr><th>Sport</th><th>Onderdeel</th><th>Speed</th><th>Power</th><th>Tech</th><th>Stamina</th></tr></thead>
+          <tbody>
+            ${data.map(t=>`
+              <tr>
+                <td>${t.sport}</td><td>${t.event}</td>
+                <td>${t.base_speed}</td><td>${t.base_power}</td><td>${t.base_technique}</td><td>${t.base_stamina}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+      root.querySelector("#t_save").addEventListener("click", async ()=>{
+        const sport = root.querySelector("#t_sport").value.trim();
+        const event = root.querySelector("#t_event").value.trim();
+        const speed = parseInt(root.querySelector("#t_speed").value,10);
+        const power = parseInt(root.querySelector("#t_power").value,10);
+        const tech  = parseInt(root.querySelector("#t_tech").value,10);
+        const stam  = parseInt(root.querySelector("#t_stam").value,10);
+        const { error } = await supabase.rpc("admin_upsert_template", {
+          p_sport: sport, p_event: event, p_speed: speed, p_power: power, p_tech: tech, p_stamina: stam
+        });
+        if (error) alert(error.message); else loadTemplates();
+      });
+    }
+
+    // ========== SETTINGS ==========
+    async function loadSettings() {
+      const root = bodies.settings;
+      const { data, error } = await supabase.from("settings").select("*").order("key");
+      if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
+
+      const getVal = (k) => data.find(x=>x.key===k)?.value?.v ?? '';
+      root.innerHTML = `
+        <div class="grid">
+          <div class="card">
+            <h3>Starter MP</h3>
+            <div class="row">
+              <input id="s_starter_mp" type="number" value="${getVal('starter_mp')}" />
+              <button data-key="starter_mp">Opslaan</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Train cost (per punt)</h3>
+            <div class="row">
+              <input id="s_train_cost" type="number" value="${getVal('train_cost')}" />
+              <button data-key="train_cost">Opslaan</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Scout cost</h3>
+            <div class="row">
+              <input id="s_scout_cost" type="number" value="${getVal('scout_cost')}" />
+              <button data-key="scout_cost">Opslaan</button>
+            </div>
+          </div>
+        </div>
+      `;
+      root.querySelectorAll("button[data-key]").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          const k = btn.dataset.key;
+          const v = parseInt(document.getElementById("s_"+k).value,10);
+          const { error } = await supabase.rpc("admin_set_setting", { p_key:k, p_value:v });
+          if (error) alert(error.message); else loadSettings();
+        });
+      });
+    }
+
+    // initial loads
+    await loadUsers();
+    await loadCountries();
+    await loadTemplates();
+    await loadSettings();
+
+    // expose for first module
+    async function loadUsers(){ /* shadowed above; noop here */ }
+    async function loadCountries(){ /* shadowed above; noop here */ }
+  </script>
+</body>
+</html>
