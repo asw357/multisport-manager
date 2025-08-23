@@ -8,29 +8,100 @@
 </head>
 <body>
   <div id="nav"></div>
+
   <div class="container">
-    <div class="grid">
+    <div class="grid" id="homeGrid">
+      <!-- Welkom -->
       <div class="card">
         <h3>Welkom bij Multisport-Manager</h3>
         <p>Beheer je land, train atleten, scout talent en strijd om medailles – volledig online.</p>
-        <p><a class="badge" href="inschrijven.html">Nieuw? Schrijf je in</a> of <a class="badge" href="inloggen.html">log in</a> om te starten.</p>
+        <p>
+          <a class="badge" href="inschrijven.html" id="ctaSignup">Nieuw? Schrijf je in</a>
+          <span class="small"> of </span>
+          <a class="badge" href="inloggen.html" id="ctaLogin">log in</a>
+        </p>
       </div>
+
+      <!-- Snel starten (altijd zichtbaar) -->
       <div class="card">
         <h3>Direct aan de slag</h3>
         <ul>
           <li><a href="manager.html">Manager dashboard</a></li>
           <li><a href="training.html">Training</a></li>
           <li><a href="scouten.html">Scout een atleet</a></li>
-          <li><a href="admin.html">Admin (alleen admins)</a></li>
+          <!-- Admin-link hieronder wordt dynamisch toegevoegd voor admins -->
         </ul>
-        <p class="small">Admins kunnen landen, templates en spelinstellingen beheren.</p>
+        <p class="small">Na inschrijven ontvang je automatisch een land, start‑MP en starter‑atleten.</p>
+      </div>
+
+      <!-- Jouw profiel (voor ingelogde users) -->
+      <div class="card" id="profileCard" style="display:none">
+        <h3>Jouw profiel</h3>
+        <div id="profileContent">Laden…</div>
+      </div>
+
+      <!-- Admin kaart: wordt alleen getoond aan admins -->
+      <div class="card" id="adminCard" style="display:none">
+        <h3>Admin</h3>
+        <p>Beheer landen, starter‑templates en spelinstellingen.</p>
+        <p><a class="badge" href="admin.html">Ga naar Admin Console</a></p>
+        <p class="small">Alleen zichtbaar voor admins.</p>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { navRender } from "./assets/auth.js";
+    import { navRender, getMyProfile, getUser } from "./assets/auth.js";
+
+    // Render de topnavigatie
     navRender(document.getElementById("nav"));
+
+    // Elementen
+    const adminCard = document.getElementById("adminCard");
+    const profileCard = document.getElementById("profileCard");
+    const profileContent = document.getElementById("profileContent");
+    const ctaSignup = document.getElementById("ctaSignup");
+    const ctaLogin = document.getElementById("ctaLogin");
+
+    // Startup: toon adminkaart alleen voor admins; toon profielkaart voor ingelogde users
+    (async () => {
+      const user = await getUser();
+
+      if (user) {
+        // Ingelogd: verberg de inschrijf-/login-CTA’s
+        if (ctaSignup) ctaSignup.style.display = "none";
+        if (ctaLogin) ctaLogin.style.display = "none";
+
+        const prof = await getMyProfile();
+        if (prof) {
+          // Profielkaart vullen
+          profileCard.style.display = "block";
+          profileContent.innerHTML = `
+            <div class="row">
+              <div>
+                <div class="badge">${prof.email ?? ""}</div>
+                <div class="small">Manager</div>
+                <h4 style="margin:6px 0 0 0">${prof.manager_name ?? "—"}</h4>
+              </div>
+              <div style="margin-left:auto; text-align:right">
+                <div class="kpi">${prof.mp ?? 0} MP</div>
+                <div class="badge">${prof.country_name ?? "—"}</div>
+              </div>
+            </div>
+            ${prof.is_admin ? '<p class="small" style="margin-top:10px">Je hebt admin‑rechten.</p>' : ""}
+          `;
+
+          // Adminkaart alleen als prof.is_admin == true
+          if (prof.is_admin) {
+            adminCard.style.display = "block";
+          }
+        }
+      } else {
+        // Niet ingelogd: verberg profiel- en adminkaart
+        profileCard.style.display = "none";
+        adminCard.style.display = "none";
+      }
+    })();
   </script>
 </body>
 </html>
