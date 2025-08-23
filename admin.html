@@ -13,7 +13,8 @@
     <div class="card">
       <h3>Admin Console</h3>
       <p class="small">
-        Alleen zichtbaar voor admins. Het e-mailadres <b>wilcoboesveld12@hotmail.com</b> wordt automatisch admin gemaakt.
+        Alleen zichtbaar voor admins. Het e-mailadres
+        <b>wilcoboesveld12@hotmail.com</b> wordt automatisch admin gemaakt.
       </p>
       <div id="who"></div>
     </div>
@@ -38,11 +39,13 @@
 
     navRender(document.getElementById("nav"));
 
-    // Guard
+    // Guard: alleen admins komen hier binnen
     const { user, prof } = await requireAdmin();
 
     document.getElementById("who").innerHTML = `
-      Ingelogd als <b>${prof?.email}</b> • <span class="badge">${prof?.manager_name ?? '—'}</span> • ${prof?.is_admin ? '<span class="badge">Admin ✅</span>' : '<span class="badge">Geen Admin</span>'}
+      Ingelogd als <b>${prof?.email}</b> • 
+      <span class="badge">${prof?.manager_name ?? '—'}</span> • 
+      ${prof?.is_admin ? '<span class="badge">Admin ✅</span>' : '<span class="badge error">Geen Admin</span>'}
     `;
 
     // Tabs
@@ -67,17 +70,18 @@
       if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
       root.innerHTML = `
         <table class="table">
-          <thead><tr><th>Email</th><th>Manager</th><th>Land</th><th>MP</th><th>Admin</th><th>Acties</th></tr></thead>
+          <thead><tr><th>Email</th><th>Land</th><th>MP</th><th>Admin</th><th>Acties</th></tr></thead>
           <tbody>
             ${data.map(u=>`
               <tr>
                 <td>${u.email ?? '—'}<div class="small">${u.id}</div></td>
-                <td>${u.manager_name ?? ''}</td>
                 <td>${u.country ?? ''}</td>
                 <td>${u.mp ?? 0}</td>
                 <td>${u.is_admin ? 'Ja' : 'Nee'}</td>
                 <td>
-                  <button data-act="toggle-admin" data-id="${u.id}" data-flag="${u.is_admin ? 0 : 1}">${u.is_admin ? 'Admin uit' : 'Admin aan'}</button>
+                  <button data-act="toggle-admin" data-id="${u.id}" data-flag="${u.is_admin ? 0 : 1}">
+                    ${u.is_admin ? 'Admin uit' : 'Admin aan'}
+                  </button>
                 </td>
               </tr>`).join("")}
           </tbody>
@@ -85,10 +89,10 @@
       `;
       root.querySelectorAll('button[data-act="toggle-admin"]').forEach(btn=>{
         btn.addEventListener("click", async ()=>{
-          const id = btn.dataset.id; const flag = btn.dataset.flag === "1";
+          const id = btn.dataset.id;
+          const flag = btn.dataset.flag === "1";
           const { error } = await supabase.rpc("admin_set_admin", { p_user: id, p_is_admin: flag });
-          if (error) alert(error.message);
-          else loadUsers();
+          if (error) alert(error.message); else loadUsers();
         });
       });
     }
@@ -96,16 +100,16 @@
     // ===== COUNTRIES =====
     async function loadCountries() {
       const root = bodies.countries;
-      const { data, error } = await supabase.from("countries").select("id,name,code,sort_order,is_assigned").order("sort_order");
+      const { data, error } = await supabase.from("countries")
+        .select("id,name,code,sort_order,is_assigned").order("sort_order");
       if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
       root.innerHTML = `
         <div class="row">
           <input id="c_name" placeholder="Landnaam" />
-          <input id="c_code" placeholder="Code (3-letters)" />
+          <input id="c_code" placeholder="Code" />
           <input id="c_sort" type="number" placeholder="Sort" />
-          <button id="c_add">Toevoegen/Updaten</button>
+          <button id="c_add">Opslaan</button>
         </div>
-        <p class="small">Toewijzing gebeurt automatisch bij inschrijven. Hier beheer je de lijst en sortering.</p>
         <table class="table">
           <thead><tr><th>Sort</th><th>Land</th><th>Code</th><th>Assigned</th></tr></thead>
           <tbody>
@@ -149,7 +153,8 @@
             ${data.map(t=>`
               <tr>
                 <td>${t.sport}</td><td>${t.event}</td>
-                <td>${t.base_speed}</td><td>${t.base_power}</td><td>${t.base_technique}</td><td>${t.base_stamina}</td>
+                <td>${t.base_speed}</td><td>${t.base_power}</td>
+                <td>${t.base_technique}</td><td>${t.base_stamina}</td>
               </tr>`).join("")}
           </tbody>
         </table>
@@ -184,7 +189,7 @@
             </div>
           </div>
           <div class="card">
-            <h3>Train cost (per punt)</h3>
+            <h3>Train cost</h3>
             <div class="row">
               <input id="s_train_cost" type="number" value="${getVal('train_cost')}" />
               <button data-key="train_cost">Opslaan</button>
