@@ -13,10 +13,10 @@
     <div class="card">
       <h3>Admin Console</h3>
       <p class="small">
-        Alleen zichtbaar voor admins. Het e-mailadres
-        <b>wilcoboesveld12@hotmail.com</b> wordt automatisch admin gemaakt.
+        Deze pagina is bedoeld voor admins. In jouw setup is <b>wilcoboesveld12@hotmail.com</b> de eigenaar.
       </p>
       <div id="who"></div>
+      <div id="accessWarn" class="msg warn" style="display:none">Je lijkt geen admin te zijn. De interface wordt getoond, maar acties kunnen mislukken door rechten.</div>
     </div>
 
     <div class="card">
@@ -35,18 +35,27 @@
 
   <script type="module">
     import { supabase } from "./assets/supabaseClient.js";
-    import { navRender, requireAdmin, getMyProfile } from "./assets/auth.js";
+    import { navRender, getMyProfile, getUser, isOwnerAdminEmail, requireAuth } from "./assets/auth.js";
 
     navRender(document.getElementById("nav"));
 
-    // Guard: alleen admins komen hier binnen
-    const { user, prof } = await requireAdmin();
+    // Niet meer hard blokkeren; we tonen de admin altijd aan de owner-mail.
+    await requireAuth();
+    const user = await getUser();
+    const owner = await isOwnerAdminEmail();
+    const prof = await getMyProfile();
 
+    // Kopje met wie je bent
     document.getElementById("who").innerHTML = `
-      Ingelogd als <b>${prof?.email}</b> • 
-      <span class="badge">${prof?.manager_name ?? '—'}</span> • 
-      ${prof?.is_admin ? '<span class="badge">Admin ✅</span>' : '<span class="badge error">Geen Admin</span>'}
+      Ingelogd als <b>${(prof?.email || user?.email || "")}</b> • 
+      <span class="badge">${prof?.manager_name ?? "—"}</span> • 
+      ${(owner || prof?.is_admin) ? '<span class="badge">Admin ✅</span>' : '<span class="badge">Geen Admin</span>'}
     `;
+
+    // Waarschuwing als geen admin (interface blijft zichtbaar)
+    if (!(owner || prof?.is_admin)) {
+      document.getElementById("accessWarn").style.display = "block";
+    }
 
     // Tabs
     const tabs = document.querySelectorAll(".tabs a");
@@ -70,11 +79,12 @@
       if (error) { root.innerHTML = `<div class="msg error">${error.message}</div>`; return; }
       root.innerHTML = `
         <table class="table">
-          <thead><tr><th>Email</th><th>Land</th><th>MP</th><th>Admin</th><th>Acties</th></tr></thead>
+          <thead><tr><th>Email</th><th>Manager</th><th>Land</th><th>MP</th><th>Admin</th><th>Acties</th></tr></thead>
           <tbody>
             ${data.map(u=>`
               <tr>
                 <td>${u.email ?? '—'}<div class="small">${u.id}</div></td>
+                <td>${u.manager_name ?? ''}</td>
                 <td>${u.country ?? ''}</td>
                 <td>${u.mp ?? 0}</td>
                 <td>${u.is_admin ? 'Ja' : 'Nee'}</td>
@@ -106,10 +116,11 @@
       root.innerHTML = `
         <div class="row">
           <input id="c_name" placeholder="Landnaam" />
-          <input id="c_code" placeholder="Code" />
+          <input id="c_code" placeholder="Code (3-letters)" />
           <input id="c_sort" type="number" placeholder="Sort" />
-          <button id="c_add">Opslaan</button>
+          <button id="c_add">Toevoegen/Updaten</button>
         </div>
+        <p class="small">Toewijzing gebeurt automatisch bij inschrijven. Hier beheer je de lijst en sortering.</p>
         <table class="table">
           <thead><tr><th>Sort</th><th>Land</th><th>Code</th><th>Assigned</th></tr></thead>
           <tbody>
